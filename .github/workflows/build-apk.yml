@@ -62,19 +62,10 @@ jobs:
           ls -lh "$APK"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
+          git fetch origin
+          git rebase origin/${{ github.ref_name }}
           mkdir -p build-output
           cp "$APK" build-output/MedControl-debug.apk
           git add build-output/MedControl-debug.apk
           git diff-index --quiet HEAD || git commit -m "[skip ci] build: MedControl debug APK $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push origin HEAD
-
-      - name: Commit build log on failure
-        if: failure()
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          mkdir -p build-output
-          tail -400 /tmp/build.log > build-output/last-build-log.txt 2>/dev/null || echo "No build log captured" > build-output/last-build-log.txt
-          git add build-output/last-build-log.txt
-          git diff-index --quiet HEAD || git commit -m "[skip ci] debug: build log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push origin HEAD
