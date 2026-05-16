@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
 @Database(
     entities = [MedicationEntity::class, IntakeScheduleEntity::class, StockEventEntity::class, SettingsEntity::class],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class MedControlDatabase : RoomDatabase() {
