@@ -57,7 +57,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git fetch origin
-          git rebase origin/${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
           mkdir -p build-output
           if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
             cp app/build/outputs/apk/debug/app-debug.apk build-output/MedControl-debug.apk
@@ -68,7 +68,7 @@ jobs:
             git add build-output/last-build-log.txt
             git diff-index --quiet HEAD || git commit -m "[skip ci] debug: build log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           fi
-          git push origin HEAD
+          git push origin HEAD:refs/heads/${{ github.ref_name }}
 
       - name: Fail job if build failed
         if: steps.build.outcome == 'failure'
