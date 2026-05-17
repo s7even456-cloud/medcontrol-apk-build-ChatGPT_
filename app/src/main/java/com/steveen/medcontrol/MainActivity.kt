@@ -59,18 +59,23 @@ class MainActivity : AppCompatActivity() {
                 put("uri", "beep")
             })
             try {
-                val rm = RingtoneManager(this@MainActivity)
+                // Use applicationContext so RingtoneManager does NOT register the cursor
+                // as a managed cursor on the Activity — avoids StaleDataException on restart.
+                val rm = RingtoneManager(applicationContext)
                 rm.setType(RingtoneManager.TYPE_ALARM)
                 val cursor = rm.cursor
-                while (cursor.moveToNext()) {
-                    val name = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX)
-                    val uri = rm.getRingtoneUri(cursor.position).toString()
-                    arr.put(JSONObject().apply {
-                        put("name", name)
-                        put("uri", uri)
-                    })
+                try {
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX)
+                        val uri = rm.getRingtoneUri(cursor.position).toString()
+                        arr.put(JSONObject().apply {
+                            put("name", name)
+                            put("uri", uri)
+                        })
+                    }
+                } finally {
+                    cursor.close()
                 }
-                cursor.close()
             } catch (e: Exception) {
                 // Return at least the beep option
             }
