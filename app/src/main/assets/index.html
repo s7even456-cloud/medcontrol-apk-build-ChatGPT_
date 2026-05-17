@@ -9,710 +9,1060 @@
   <link rel="icon" href="icons/icon-192.png" />
   <title>MedControl Diario</title>
   <style>
-    :root{
-      --bg:#F4F7F5;
-      --card:#FFFFFF;
-      --text:#17221F;
-      --muted:#64706B;
-      --line:#DDE6E1;
-      --brand:#116A5B;
-      --brand-2:#0C4E43;
-      --accent:#F0A33A;
-      --danger:#B42318;
-      --danger-bg:#FFE9E7;
-      --ok:#177245;
-      --ok-bg:#E7F6EF;
-      --warn:#946200;
-      --warn-bg:#FFF4D8;
-      --info:#174EA6;
-      --info-bg:#EAF1FF;
-      --shadow:0 16px 40px rgba(14, 32, 27, .10);
-      --radius:22px;
-      --radius-sm:14px;
+    :root {
+      --bg: #F0F4F2;
+      --card: #FFFFFF;
+      --text: #17221F;
+      --muted: #64706B;
+      --line: #DDE6E1;
+      --brand: #116A5B;
+      --brand-2: #0C4E43;
+      --brand-dark: #093D34;
+      --accent: #F0A33A;
+      --danger: #D32F2F;
+      --danger-bg: #FFEBEE;
+      --ok: #1B8A4E;
+      --ok-bg: #E8F5EE;
+      --warn: #B45309;
+      --warn-bg: #FFF3CD;
+      --info: #1565C0;
+      --info-bg: #E3F2FD;
+      --shadow-sm: 0 2px 8px rgba(14,32,27,.08);
+      --shadow: 0 4px 20px rgba(14,32,27,.10);
+      --shadow-lg: 0 12px 40px rgba(14,32,27,.15);
+      --radius: 20px;
+      --radius-sm: 14px;
+      --radius-xs: 10px;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --nav-height: 72px;
     }
 
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{
-      margin:0;
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at 20% 0%, rgba(17,106,91,.13), transparent 28%),
-        radial-gradient(circle at 90% 5%, rgba(240,163,58,.14), transparent 24%),
-        var(--bg);
-      min-height:100svh;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100svh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
 
-    button, input, select, textarea{
-      font:inherit;
+    button, input, select, textarea { font: inherit; }
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .12s ease, background .15s ease, opacity .12s ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active { transform: scale(.96); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      padding-bottom: calc(var(--nav-height) + 20px + var(--safe-bottom));
     }
 
-    button{
-      border:0;
-      cursor:pointer;
-      border-radius:999px;
-      padding:12px 16px;
-      font-weight:750;
-      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
-      touch-action:manipulation;
+    /* ===== HEADER ===== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+      padding: calc(10px + var(--safe-top)) 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 2px 12px rgba(9,61,52,.35);
     }
-    button:active{transform:scale(.98)}
-    button:disabled{opacity:.45; cursor:not-allowed}
-
-    .app{
-      width:min(1120px, 100%);
-      margin:0 auto;
-      padding:18px 14px 92px;
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
     }
-
-    header.hero{
-      position:relative;
-      overflow:hidden;
-      border-radius:30px;
-      padding:24px 20px;
-      background:linear-gradient(135deg, #0E5E51, #153C36 70%);
-      color:white;
-      box-shadow:var(--shadow);
-      min-height:170px;
+    .header-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.18);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,.22);
     }
-    .hero::after{
-      content:"";
-      position:absolute;
-      width:260px;
-      height:260px;
-      border-radius:50%;
-      background:rgba(255,255,255,.08);
-      right:-70px;
-      top:-90px;
+    .header-logo svg { width: 22px; height: 22px; }
+    .header-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .hero-top{
-      position:relative;
-      z-index:1;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
+    .clock-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 6px 12px;
+      color: #fff;
+      font-size: .9rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .brandline{
-      display:flex;
-      gap:12px;
-      align-items:center;
-    }
-    .logo{
-      width:48px;
-      height:48px;
-      border-radius:16px;
-      background:rgba(255,255,255,.14);
-      display:grid;
-      place-items:center;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
-      flex:0 0 auto;
-    }
-    .logo svg{width:28px;height:28px}
-    h1{
-      margin:0;
-      font-size:clamp(1.6rem, 3.5vw, 2.45rem);
-      letter-spacing:-.04em;
-      line-height:1.04;
-    }
-    .subtitle{
-      margin:8px 0 0;
-      color:rgba(255,255,255,.80);
-      max-width:62ch;
-      line-height:1.42;
-      font-size:.98rem;
-    }
-    .status-pill{
-      display:flex;
-      align-items:center;
-      gap:7px;
-      border-radius:999px;
-      padding:8px 11px;
-      background:rgba(255,255,255,.12);
-      color:white;
-      font-size:.82rem;
-      font-weight:750;
-      white-space:nowrap;
-    }
-    .pulse{
-      width:9px;height:9px;border-radius:50%;
-      background:#67E8A4;
-      box-shadow:0 0 0 6px rgba(103,232,164,.15);
-    }
-    .hero-actions{
-      position:relative;
-      z-index:1;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:20px;
+    .clock-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #6EE7B7;
+      box-shadow: 0 0 0 4px rgba(110,231,183,.2);
+      flex-shrink: 0;
     }
 
-    .btn-primary{
-      background:var(--brand);
-      color:white;
-      box-shadow:0 10px 22px rgba(17,106,91,.22);
+    /* ===== STATS ROW ===== */
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      padding: 14px 14px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .btn-primary:hover{background:var(--brand-2)}
-    .btn-light{
-      background:rgba(255,255,255,.95);
-      color:#123E36;
+    .stats-row::-webkit-scrollbar { display: none; }
+    .stat-card {
+      flex: 0 0 140px;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(221,230,225,.7);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      animation: fadeUp .3s ease both;
     }
-    .btn-ghost{
-      background:#EEF4F1;
-      color:#123E36;
+    .stat-card:nth-child(2) { animation-delay: .05s; }
+    .stat-card:nth-child(3) { animation-delay: .10s; }
+    .stat-label {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
     }
-    .btn-warning{
-      background:var(--warn-bg);
-      color:var(--warn);
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      line-height: 1;
+      color: var(--brand);
     }
-    .btn-danger{
-      background:var(--danger-bg);
-      color:var(--danger);
+    .stat-sub {
+      font-size: .75rem;
+      color: var(--muted);
+      font-weight: 500;
+      line-height: 1.3;
     }
-    .btn-ok{
-      background:var(--ok);
-      color:white;
+    .stat-card.adherence-high .stat-value { color: var(--ok); }
+    .stat-card.adherence-mid .stat-value { color: var(--warn); }
+    .stat-card.adherence-low .stat-value { color: var(--danger); }
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--danger);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 800;
+      padding: 0 6px;
     }
-    .btn-small{
-      padding:9px 12px;
-      font-size:.87rem;
-    }
-
-    .grid{
-      display:grid;
-      gap:14px;
-      margin-top:16px;
-    }
-    @media(min-width:860px){
-      .grid-main{
-        grid-template-columns:1.15fr .85fr;
-        align-items:start;
-      }
-      .cards-3{
-        grid-template-columns:repeat(3, minmax(0,1fr));
-      }
-    }
-
-    .card{
-      background:rgba(255,255,255,.92);
-      backdrop-filter: blur(10px);
-      border:1px solid rgba(221,230,225,.86);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:16px;
-    }
-    .card h2{
-      margin:0;
-      font-size:1.16rem;
-      letter-spacing:-.02em;
-    }
-    .card-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:14px;
-    }
-    .muted{color:var(--muted)}
-    .small{font-size:.88rem}
-    .tiny{font-size:.76rem}
-    .strong{font-weight:800}
-    .divider{
-      height:1px;
-      background:var(--line);
-      margin:14px 0;
+    .stat-badge.hidden { display: none; }
+    .stat-row-inner {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .summary-stat{
-      display:flex;
-      flex-direction:column;
-      gap:7px;
-      min-height:112px;
+    /* ===== SECTIONS ===== */
+    .sections-wrap {
+      padding: 14px 14px 0;
     }
-    .summary-stat .value{
-      font-size:2rem;
-      letter-spacing:-.05em;
-      font-weight:900;
-      line-height:1;
+    section.view-section {
+      display: none;
+      animation: fadeUp .22s ease both;
     }
-    .summary-stat .label{
-      color:var(--muted);
-      font-weight:650;
+    section.view-section.active {
+      display: block;
     }
 
-    .dose-list{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .dose-row{
-      display:grid;
+
+    /* ===== SECTION HEADER ===== */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+    .section-sub {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(221,230,225,.8);
+      overflow: hidden;
+    }
+    .card + .card { margin-top: 12px; }
+
+    /* ===== BUTTONS ===== */
+    .btn-primary {
+      background: var(--brand);
+      color: white;
+      box-shadow: 0 4px 14px rgba(17,106,91,.25);
+    }
+    .btn-primary:hover { background: var(--brand-2); }
+    .btn-ghost {
+      background: #EEF3F0;
+      color: var(--brand-2);
+      font-weight: 700;
+    }
+    .btn-ghost:hover { background: #DDE8E3; }
+    .btn-light {
+      background: rgba(255,255,255,.92);
+      color: var(--brand-2);
+      font-weight: 700;
+    }
+    .btn-warning {
+      background: var(--warn-bg);
+      color: var(--warn);
+      font-weight: 700;
+    }
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      font-weight: 700;
+    }
+    .btn-ok {
+      background: var(--ok);
+      color: white;
+      font-weight: 700;
+    }
+    .btn-small {
+      padding: 8px 14px;
+      font-size: .84rem;
+    }
+    .btn-xs {
+      padding: 6px 10px;
+      font-size: .78rem;
+    }
+
+    /* ===== DOSE ROWS ===== */
+    .dose-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dose-row {
+      display: grid;
       grid-template-columns: auto 1fr auto;
-      gap:12px;
-      align-items:center;
-      padding:13px;
-      border:1px solid var(--line);
-      border-radius:18px;
-      background:#fff;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 14px;
+      border-left: 4px solid transparent;
+      border-radius: 0;
+      background: #fff;
+      transition: background .12s;
     }
-    .time-badge{
-      background:#EAF4F1;
-      color:#0E5E51;
-      font-weight:900;
-      min-width:65px;
-      text-align:center;
-      border-radius:14px;
-      padding:10px 8px;
-      letter-spacing:-.01em;
-    }
-    .med-title{
-      font-weight:900;
-      letter-spacing:-.01em;
-    }
-    .dose-meta{
-      margin-top:3px;
-      color:var(--muted);
-      font-size:.86rem;
-    }
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:7px 10px;
-      border-radius:999px;
-      font-weight:850;
-      font-size:.79rem;
-      white-space:nowrap;
-    }
-    .chip.ok{background:var(--ok-bg); color:var(--ok)}
-    .chip.warn{background:var(--warn-bg); color:var(--warn)}
-    .chip.danger{background:var(--danger-bg); color:var(--danger)}
-    .chip.info{background:var(--info-bg); color:var(--info)}
-    .chip.neutral{background:#EEF2F0;color:#44504B}
+    .dose-row:last-child { border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px); }
+    .dose-row:first-child { border-radius: calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0; }
+    .dose-row:only-child { border-radius: calc(var(--radius) - 2px); }
+    .dose-row + .dose-row { border-top: 1px solid var(--line); }
 
-    .stock-card{
-      position:relative;
-      overflow:hidden;
-      border-radius:20px;
-      border:1px solid var(--line);
-      background:#fff;
-      padding:14px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
+    /* Status border colors */
+    .dose-row.status-taken { border-left-color: var(--ok); }
+    .dose-row.status-missed { border-left-color: var(--danger); }
+    .dose-row.status-warn,
+    .dose-row.status-alarm_ringed,
+    .dose-row.status-awaiting_check { border-left-color: var(--accent); }
+    .dose-row.status-scheduled { border-left-color: #C8D9D4; }
+    .dose-row.status-snoozed { border-left-color: var(--info); }
+
+    .time-badge {
+      background: linear-gradient(135deg, #EAF4F1, #D6EDE7);
+      color: var(--brand);
+      font-weight: 900;
+      min-width: 62px;
+      text-align: center;
+      border-radius: 12px;
+      padding: 10px 8px;
+      font-size: .95rem;
+      letter-spacing: -.01em;
+      line-height: 1.1;
     }
-    .stock-card.low{
-      border-color:#F4C36A;
-      background:linear-gradient(135deg, #FFF9E9, #fff);
+    .med-title {
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: -.01em;
+      color: var(--text);
     }
-    .stock-card.empty{
-      border-color:#FFB4AC;
-      background:linear-gradient(135deg, #FFF1EF, #fff);
-    }
-    .stock-top{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-    }
-    .stock-name{
-      font-size:1rem;
-      font-weight:900;
-    }
-    .progress{
-      width:100%;
-      height:10px;
-      border-radius:999px;
-      background:#E9EFEC;
-      overflow:hidden;
-    }
-    .progress span{
-      display:block;
-      height:100%;
-      border-radius:999px;
-      background:linear-gradient(90deg, var(--brand), #23A283);
-      width:0%;
-    }
-    .stock-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
+    .dose-meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 500;
     }
 
-    .med-list{
-      display:grid;
-      gap:10px;
+    /* ===== CHIPS ===== */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .75rem;
+      white-space: nowrap;
     }
-    .med-item{
-      border:1px solid var(--line);
-      border-radius:18px;
-      background:#fff;
-      padding:13px;
-      display:grid;
-      gap:10px;
+    .chip.ok { background: var(--ok-bg); color: var(--ok); }
+    .chip.warn { background: var(--warn-bg); color: var(--warn); }
+    .chip.danger { background: var(--danger-bg); color: var(--danger); }
+    .chip.info { background: var(--info-bg); color: var(--info); }
+    .chip.neutral { background: #EEF2F0; color: #44504B; }
+
+    /* ===== STOCK CARDS ===== */
+    .stock-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    .med-item-top{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:flex-start;
+    .stock-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+      transition: border-color .2s;
     }
-    .med-actions{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
+    .stock-card.low {
+      border-color: #F4C36A;
+      background: linear-gradient(135deg, #FFFCF2, #fff 60%);
+    }
+    .stock-card.empty {
+      border-color: #FFB4AC;
+      background: linear-gradient(135deg, #FFF2F1, #fff 60%);
+    }
+    .stock-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .stock-main {}
+    .stock-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+    .stock-days {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .stock-days-num {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      color: var(--brand);
+      line-height: 1;
+    }
+    .stock-card.low .stock-days-num { color: var(--warn); }
+    .stock-card.empty .stock-days-num { color: var(--danger); }
+    .stock-days-label {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .stock-detail {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .progress {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: #E8EDEA;
+      overflow: hidden;
+    }
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand), #23A283);
+      width: 0%;
+      transition: width .5s ease;
+    }
+    .stock-card.low .progress span {
+      background: linear-gradient(90deg, #D97706, #F0A33A);
+    }
+    .stock-card.empty .progress span {
+      background: linear-gradient(90deg, var(--danger), #EF5350);
+    }
+    .stock-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0 8px;
-      font-size:.88rem;
+    /* ===== MED LIST ===== */
+    .med-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    th{
-      text-align:left;
-      color:var(--muted);
-      font-size:.76rem;
-      text-transform:uppercase;
-      letter-spacing:.04em;
-      padding:0 10px;
+    .med-item {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--brand);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
     }
-    td{
-      background:#fff;
-      border-top:1px solid var(--line);
-      border-bottom:1px solid var(--line);
-      padding:10px;
-      vertical-align:middle;
+    .med-item.paused {
+      border-left-color: #B0BEB8;
+      opacity: .8;
     }
-    td:first-child{
-      border-left:1px solid var(--line);
-      border-radius:14px 0 0 14px;
+    .med-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
     }
-    td:last-child{
-      border-right:1px solid var(--line);
-      border-radius:0 14px 14px 0;
+    .med-info {}
+    .med-times {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
     }
-
-    .bottom-nav{
-      position:fixed;
-      z-index:30;
-      left:50%;
-      bottom:calc(10px + var(--safe-bottom));
-      transform:translateX(-50%);
-      width:min(680px, calc(100% - 20px));
-      background:rgba(255,255,255,.94);
-      border:1px solid rgba(221,230,225,.9);
-      box-shadow:0 18px 44px rgba(14,32,27,.18);
-      border-radius:999px;
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:4px;
-      padding:6px;
-      backdrop-filter: blur(12px);
+    .time-chip {
+      background: linear-gradient(135deg, #EAF4F1, #D6EDE7);
+      color: var(--brand);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: .78rem;
+      font-weight: 700;
     }
-    .nav-btn{
-      background:transparent;
-      color:#4A5651;
-      border-radius:999px;
-      padding:10px 8px;
-      font-size:.78rem;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:5px;
-    }
-    .nav-btn.active{
-      background:#E8F2EF;
-      color:#0E5E51;
+    .med-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      flex-shrink: 0;
     }
 
-    .modal-backdrop{
-      position:fixed;
-      inset:0;
-      z-index:80;
-      background:rgba(10,18,16,.50);
-      backdrop-filter: blur(6px);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding:14px;
+    /* ===== FAB ===== */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 18px + var(--safe-bottom));
+      right: 18px;
+      z-index: 25;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      font-size: 1.6rem;
+      font-weight: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 20px rgba(17,106,91,.38);
+      border: 0;
+      line-height: 1;
     }
-    .modal-backdrop.show{display:flex}
-    .modal{
-      width:min(620px,100%);
-      max-height:92svh;
-      overflow:auto;
-      background:#fff;
-      border-radius:28px;
-      box-shadow:0 30px 70px rgba(0,0,0,.30);
-      padding:18px;
-      animation:rise .16s ease-out;
+    .fab.visible { display: flex; }
+    .fab:active { transform: scale(.93); }
+
+    /* ===== HISTORY TABLE ===== */
+    .history-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
     }
-    @keyframes rise{
-      from{transform:translateY(18px); opacity:.6}
-      to{transform:translateY(0); opacity:1}
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
     }
-    .modal-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:12px;
+    thead {
+      background: #F0F4F2;
     }
-    .modal h3{
-      font-size:1.45rem;
-      margin:0;
-      letter-spacing:-.03em;
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 700;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
     }
-    .xbtn{
-      width:38px;height:38px;
-      padding:0;
-      background:#EFF3F1;
-      color:#26332F;
-      border-radius:50%;
-      flex:0 0 auto;
+    td {
+      padding: 11px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid #F0F4F2;
+      color: var(--text);
     }
-    .field{
-      display:grid;
-      gap:7px;
-      margin:12px 0;
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #F7FAF8; }
+
+    /* ===== SETTINGS ===== */
+    .settings-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
     }
-    label{
-      color:#26332F;
-      font-weight:800;
-      font-size:.9rem;
+    .settings-card + .settings-card { margin-top: 12px; }
+    .settings-card h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 14px;
+      letter-spacing: -.02em;
     }
-    input, textarea, select{
-      width:100%;
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:13px 14px;
-      background:#FAFCFB;
-      color:var(--text);
-      outline:none;
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 14px;
     }
-    input:focus, textarea:focus, select:focus{
-      border-color:rgba(17,106,91,.55);
-      box-shadow:0 0 0 4px rgba(17,106,91,.09);
+    .field:last-child { margin-bottom: 0; }
+    label {
+      color: #26332F;
+      font-weight: 700;
+      font-size: .88rem;
     }
-    .modal-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:14px;
+    input[type="number"],
+    input[type="text"],
+    input[type="time"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      background: #FAFCFB;
+      color: var(--text);
+      outline: none;
+      font-size: .95rem;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .checkline{
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      padding:12px;
-      border-radius:16px;
-      background:#F5F8F6;
-      border:1px solid var(--line);
-      margin:12px 0;
+    input:focus, textarea:focus, select:focus {
+      border-color: rgba(17,106,91,.5);
+      box-shadow: 0 0 0 3px rgba(17,106,91,.1);
     }
-    .checkline input{
-      width:22px;height:22px;margin-top:1px;
-      accent-color:var(--brand);
-      flex:0 0 auto;
+    .settings-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .settings-actions button { width: 100%; border-radius: var(--radius-sm); }
+    .danger-card {
+      background: var(--danger-bg);
+      border-color: rgba(211,47,47,.2);
+    }
+    .danger-card h3 { color: var(--danger); }
+
+    /* ===== CHECKLINE ===== */
+    .checkline {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: #F5F8F6;
+      border: 1.5px solid var(--line);
+      margin: 14px 0;
+    }
+    .checkline input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      accent-color: var(--brand);
+      flex: 0 0 auto;
+      border-radius: 6px;
+      border: none;
+      padding: 0;
+      box-shadow: none;
+    }
+    .checkline-text {}
+    .checkline label {
+      font-weight: 700;
+      font-size: .92rem;
+      display: block;
+    }
+    .checkline .hint {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 4px;
     }
 
-    .toast{
-      position:fixed;
-      z-index:120;
-      left:50%;
-      bottom:calc(82px + var(--safe-bottom));
-      transform:translateX(-50%) translateY(20px);
-      opacity:0;
-      pointer-events:none;
-      transition:.18s ease;
-      width:min(560px, calc(100% - 26px));
-      background:#13251F;
-      color:white;
-      border-radius:18px;
-      padding:13px 15px;
-      box-shadow:0 20px 50px rgba(0,0,0,.25);
-      font-weight:700;
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(10,18,16,.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0 0 var(--safe-bottom);
     }
-    .toast.show{
-      opacity:1;
-      transform:translateX(-50%) translateY(0);
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: min(620px, 100%);
+      max-height: 92svh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 28px 28px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.22);
+      padding: 8px 18px 24px;
+      animation: slideUp .2s cubic-bezier(.22,.68,0,1.2);
+    }
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 999px;
+      background: #DDE6E1;
+      margin: 8px auto 16px;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: .5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .modal h3 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+    .modal p.muted {
+      font-size: .88rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+    .xbtn {
+      width: 36px; height: 36px;
+      padding: 0;
+      background: #EFF3F1;
+      color: #26332F;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      font-size: 1.2rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .modal-actions button { flex: 1; min-width: 120px; border-radius: var(--radius-sm); padding: 13px 16px; }
+    .modal-note {
+      border-radius: var(--radius-sm);
+      background: #F2F7F5;
+      border: 1px solid #CFE4DC;
+      padding: 12px;
+      color: #244D44;
+      line-height: 1.45;
+      font-size: .85rem;
+      margin: 10px 0;
     }
 
-    .empty-state{
-      border:1px dashed #BAC7C1;
-      border-radius:18px;
-      padding:22px 14px;
-      text-align:center;
-      color:var(--muted);
-      background:#FAFCFB;
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      position: fixed;
+      z-index: 50;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0 6px calc(6px + var(--safe-bottom));
+      display: flex;
+      align-items: stretch;
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid rgba(221,230,225,.9);
+      box-shadow: 0 -4px 20px rgba(14,32,27,.10);
+      backdrop-filter: blur(14px);
+      height: calc(var(--nav-height) + var(--safe-bottom));
+    }
+    .nav-btn {
+      background: transparent;
+      color: #7A8882;
+      border-radius: var(--radius-xs);
+      padding: 8px 4px 4px;
+      font-size: .68rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex: 1;
+      letter-spacing: .01em;
+      transition: color .15s, background .15s;
+      min-height: 56px;
+    }
+    .nav-btn svg {
+      width: 22px;
+      height: 22px;
+      transition: transform .15s;
+    }
+    .nav-btn.active {
+      color: var(--brand);
+    }
+    .nav-btn.active svg {
+      transform: scale(1.12);
+    }
+    .nav-btn-icon {
+      width: 40px;
+      height: 32px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+    .nav-btn.active .nav-btn-icon {
+      background: #E0F0EB;
     }
 
-    .install-note{
-      border-radius:18px;
-      background:#F6FBF9;
-      border:1px solid #CFE4DC;
-      padding:13px;
-      color:#244D44;
-      line-height:1.45;
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      border: 1.5px dashed #BAC7C1;
+      border-radius: var(--radius);
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--muted);
+      background: #FAFCFB;
+      font-size: .9rem;
+      font-weight: 500;
     }
 
-    @media(max-width:560px){
-      .hero{border-radius:24px}
-      .hero-top{flex-direction:column}
-      .status-pill{align-self:flex-start}
-      .dose-row{
-        grid-template-columns:auto 1fr;
-      }
-      .dose-row .chip{
-        grid-column:1 / -1;
-        justify-self:start;
-      }
-      table{font-size:.8rem}
-      .hide-sm{display:none}
-      .modal{border-radius:24px}
-      .card{padding:14px}
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      z-index: 120;
+      left: 50%;
+      bottom: calc(var(--nav-height) + 10px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(16px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      width: min(500px, calc(100% - 28px));
+      background: #13251F;
+      color: white;
+      border-radius: 999px;
+      padding: 12px 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.28);
+      font-weight: 700;
+      font-size: .9rem;
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== MISC ===== */
+    .muted { color: var(--muted); }
+    .small { font-size: .85rem; }
+    .tiny { font-size: .75rem; }
+    .strong { font-weight: 800; }
+    .divider { height: 1px; background: var(--line); margin: 12px 0; }
+    .hide-sm { display: none; }
+
+    @media (min-width: 480px) {
+      .hide-sm { display: table-cell; }
+    }
+
+    @media (min-width: 540px) {
+      .app { padding-left: 16px; padding-right: 16px; }
+      .stats-row { overflow-x: visible; }
+      .stat-card { flex: 1; }
+      .modal { border-radius: 28px; margin-bottom: 14px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <header class="hero">
-      <div class="hero-top">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="header-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M8.5 3.8h7A2.5 2.5 0 0 1 18 6.3v11.4a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 17.7V6.3a2.5 2.5 0 0 1 2.5-2.5Z" stroke="white" stroke-width="1.7"/>
+          <path d="M9 8.5h6M9 12h6M9 15.5h3.3" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="header-title">MedControl Diario</span>
+    </div>
+    <div class="clock-pill">
+      <span class="clock-dot"></span>
+      <span id="clock">--:--</span>
+    </div>
+  </header>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <article class="stat-card" aria-label="Tomas de hoy">
+      <div class="stat-label">Hoy</div>
+      <div class="stat-value" id="statToday">0/0</div>
+      <div class="stat-sub" id="statTodayText">Sin datos</div>
+    </article>
+    <article class="stat-card" id="adherenceCard" aria-label="Adherencia semanal">
+      <div class="stat-label">Adherencia 7d</div>
+      <div class="stat-value" id="statAdherence">--%</div>
+      <div class="stat-sub">Tomadas vs olvidadas</div>
+    </article>
+    <article class="stat-card" aria-label="Avisos de compra">
+      <div class="stat-label">Avisos compra</div>
+      <div class="stat-row-inner">
+        <div class="stat-value" id="statLowStock">0</div>
+        <span class="stat-badge hidden" id="statLowStockBadge">!</span>
+      </div>
+      <div class="stat-sub">Stock bajo o agotado</div>
+    </article>
+  </div>
+
+  <!-- MAIN SECTIONS -->
+  <div class="app sections-wrap">
+
+    <!-- TODAY -->
+    <section class="view-section active" id="sectionToday">
+      <div class="section-header">
         <div>
-          <div class="brandline">
-            <div class="logo" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M8.5 3.8h7A2.5 2.5 0 0 1 18 6.3v11.4a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 17.7V6.3a2.5 2.5 0 0 1 2.5-2.5Z" stroke="white" stroke-width="1.7"/>
-                <path d="M9 8.5h6M9 12h6M9 15.5h3.3" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <h1>MedControl Diario</h1>
-              <p class="subtitle">Recordatorios, check de confirmación a los 2 minutos, historial de tomas y aviso de compra antes de quedarte sin medicación.</p>
-            </div>
-          </div>
+          <div class="section-title">Tomas de hoy</div>
+          <div class="section-sub" id="todayLabel">--</div>
         </div>
-        <div class="status-pill"><span class="pulse"></span><span id="clock">--:--</span></div>
+        <button class="btn-ghost btn-small" id="btnRefresh" aria-label="Actualizar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Actualizar
+        </button>
       </div>
-
-      <div class="hero-actions">
-        <button class="btn-light" id="btnEnableNotifications">Activar notificaciones</button>
-        <button class="btn-light" id="btnInstall" hidden>Instalar en móvil</button>
-        <button class="btn-light" id="btnTestAlarm">Probar alarma</button>
+      <div class="card">
+        <div class="dose-list" id="todayDoses"></div>
       </div>
-    </header>
-
-    <section class="grid cards-3">
-      <article class="card summary-stat">
-        <span class="label">Tomas de hoy</span>
-        <span class="value" id="statToday">0/0</span>
-        <span class="small muted" id="statTodayText">Sin datos</span>
-      </article>
-      <article class="card summary-stat">
-        <span class="label">Adherencia registrada</span>
-        <span class="value" id="statAdherence">--%</span>
-        <span class="small muted">Confirmadas frente a olvidadas</span>
-      </article>
-      <article class="card summary-stat">
-        <span class="label">Avisos de compra</span>
-        <span class="value" id="statLowStock">0</span>
-        <span class="small muted">Medicamentos con ≤ 3 días estimados</span>
-      </article>
     </section>
 
-    <main class="grid grid-main">
-      <section class="grid">
-        <article class="card" id="sectionToday">
-          <div class="card-head">
-            <div>
-              <h2>Tomas de hoy</h2>
-              <div class="small muted" id="todayLabel">--</div>
-            </div>
-            <button class="btn-ghost btn-small" id="btnRefresh">Actualizar</button>
-          </div>
-          <div class="dose-list" id="todayDoses"></div>
-        </article>
+    <!-- STOCK -->
+    <section class="view-section" id="sectionStock">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Stock y compra</div>
+          <div class="section-sub">Aviso automático antes de quedarse sin</div>
+        </div>
+      </div>
+      <div class="stock-grid" id="stockList"></div>
+    </section>
 
-        <article class="card" id="sectionHistory">
-          <div class="card-head">
-            <div>
-              <h2>Registro de control</h2>
-              <div class="small muted">Historial por fecha y medicamento</div>
-            </div>
-            <button class="btn-ghost btn-small" id="btnExport">Exportar</button>
-          </div>
-          <div id="historyTable"></div>
-        </article>
-      </section>
+    <!-- MEDS -->
+    <section class="view-section" id="sectionMeds">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Medicamentos</div>
+          <div class="section-sub">Gestiona alarmas, dosis y stock</div>
+        </div>
+        <button class="btn-primary btn-small" id="btnAddMed" aria-label="Añadir medicamento">
+          + Añadir
+        </button>
+      </div>
+      <div class="med-list" id="medList"></div>
+    </section>
 
-      <aside class="grid">
-        <article class="card" id="sectionStock">
-          <div class="card-head">
-            <div>
-              <h2>Stock y compra</h2>
-              <div class="small muted">Aviso automático 3 días antes</div>
-            </div>
-          </div>
-          <div class="grid" id="stockList"></div>
-        </article>
+    <!-- HISTORY -->
+    <section class="view-section" id="sectionHistory">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Registro</div>
+          <div class="section-sub">Historial por fecha y medicamento</div>
+        </div>
+        <button class="btn-ghost btn-small" id="btnExport" aria-label="Exportar historial">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Exportar
+        </button>
+      </div>
+      <div class="card history-wrap">
+        <div id="historyTable"></div>
+      </div>
+    </section>
 
-        <article class="card" id="sectionMeds">
-          <div class="card-head">
-            <div>
-              <h2>Medicamentos</h2>
-              <div class="small muted">Añadir, editar, eliminar y programar alarmas</div>
-            </div>
-            <button class="btn-primary btn-small" id="btnAddMed">Añadir</button>
-          </div>
-          <div class="med-list" id="medList"></div>
-        </article>
+    <!-- SETTINGS -->
+    <section class="view-section" id="sectionSettings">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Ajustes</div>
+          <div class="section-sub">Configuración local de la app</div>
+        </div>
+      </div>
 
-        <article class="card" id="sectionSettings">
-          <div class="card-head">
-            <div>
-              <h2>Ajustes</h2>
-              <div class="small muted">Configuración local de la app</div>
-            </div>
-          </div>
-          <div class="install-note">
-            Para que sea instalable, abre esta app desde HTTPS o localhost. En Android/Chrome aparecerá “Instalar en móvil” o “Añadir a pantalla de inicio”.
-          </div>
-          <div class="field">
-            <label>Minutos hasta solicitar el check</label>
-            <input type="number" id="settingCheckDelay" min="1" max="60" step="1" value="2">
-          </div>
-          <div class="field">
-            <label>Días mínimos para aviso de compra</label>
-            <input type="number" id="settingLowStockDays" min="1" max="30" step="1" value="3">
-          </div>
-          <div class="modal-actions">
-            <button class="btn-primary" id="btnSaveSettings">Guardar ajustes</button>
-            <button class="btn-ghost" id="btnImport">Importar copia</button>
-            <button class="btn-danger" id="btnReset">Reiniciar datos</button>
-          </div>
-          <input type="file" id="importFile" accept="application/json" hidden>
-        </article>
-      </aside>
-    </main>
-  </div>
+      <div class="settings-card">
+        <h3>Notificaciones y alarma</h3>
+        <div class="settings-actions">
+          <button class="btn-ghost" id="btnEnableNotifications">Activar notificaciones</button>
+          <button class="btn-ghost" id="btnTestAlarm">Probar alarma</button>
+          <button class="btn-ghost" id="btnInstall" hidden>Instalar en móvil</button>
+        </div>
+      </div>
 
+      <div class="settings-card">
+        <h3>Parámetros</h3>
+        <div class="field">
+          <label for="settingCheckDelay">Minutos hasta solicitar el check</label>
+          <input type="number" id="settingCheckDelay" min="1" max="60" step="1" value="2">
+        </div>
+        <div class="field">
+          <label for="settingLowStockDays">Días mínimos para aviso de compra</label>
+          <input type="number" id="settingLowStockDays" min="1" max="30" step="1" value="3">
+        </div>
+        <button class="btn-primary" id="btnSaveSettings" style="width:100%;border-radius:var(--radius-sm)">Guardar ajustes</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>Copia de seguridad</h3>
+        <div class="settings-actions">
+          <button class="btn-ghost" id="btnImport">Importar copia de seguridad</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+
+      <div class="settings-card danger-card">
+        <h3>Zona de peligro</h3>
+        <p class="small muted" style="margin-bottom:12px">Esta acción borrará todos los datos locales de manera irreversible.</p>
+        <button class="btn-danger" id="btnReset" style="width:100%;border-radius:var(--radius-sm)">Reiniciar todos los datos</button>
+      </div>
+    </section>
+
+  </div><!-- /.sections-wrap -->
+
+  <!-- FAB for meds section -->
+  <button class="fab" id="fabAddMed" aria-label="Añadir medicamento" onclick="openMedForm()">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+  <!-- BOTTOM NAV -->
   <nav class="bottom-nav" aria-label="Navegación principal">
-    <button class="nav-btn active" data-target="sectionToday">Hoy</button>
-    <button class="nav-btn" data-target="sectionStock">Stock</button>
-    <button class="nav-btn" data-target="sectionMeds">Meds</button>
-    <button class="nav-btn" data-target="sectionHistory">Registro</button>
+    <button class="nav-btn active" data-target="sectionToday" aria-label="Hoy">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      Hoy
+    </button>
+    <button class="nav-btn" data-target="sectionStock" aria-label="Stock">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+      </div>
+      Stock
+    </button>
+    <button class="nav-btn" data-target="sectionMeds" aria-label="Medicamentos">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2"/><path d="M18 20v.01"/>
+        </svg>
+      </div>
+      Meds
+    </button>
+    <button class="nav-btn" data-target="sectionHistory" aria-label="Registro">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
+        </svg>
+      </div>
+      Registro
+    </button>
+    <button class="nav-btn" data-target="sectionSettings" aria-label="Ajustes">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </div>
+      Ajustes
+    </button>
   </nav>
 
+  <!-- MODAL -->
   <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
-    <div class="modal" id="modal"></div>
+    <div class="modal" id="modal">
+      <div class="modal-handle"></div>
+    </div>
   </div>
 
+  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
   <script>
@@ -1020,6 +1370,24 @@
 
       const low = state.meds.filter(m => m.active && remainingDays(m) <= Number(state.settings.lowStockDays || 3)).length;
       document.getElementById("statLowStock").textContent = low;
+
+      // Update adherence card color class
+      const adherenceCard = document.getElementById("adherenceCard");
+      adherenceCard.classList.remove("adherence-high","adherence-mid","adherence-low");
+      if(pct !== null){
+        if(pct > 80) adherenceCard.classList.add("adherence-high");
+        else if(pct >= 50) adherenceCard.classList.add("adherence-mid");
+        else adherenceCard.classList.add("adherence-low");
+      }
+
+      // Update low stock badge
+      const badge = document.getElementById("statLowStockBadge");
+      if(low > 0){
+        badge.textContent = low;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
     }
 
     function renderToday(){
@@ -1042,7 +1410,7 @@
               ? `Confirmada a las ${new Intl.DateTimeFormat("es-ES",{hour:"2-digit",minute:"2-digit"}).format(new Date(log.confirmedAt))}`
               : log.status === "missed" ? "Registrada como no tomada" : "Pendiente";
         return `
-          <div class="dose-row">
+          <div class="dose-row status-${log.status}">
             <div class="time-badge">${log.scheduledTime}</div>
             <div>
               <div class="med-title">${escapeHtml(name)}</div>
@@ -1081,9 +1449,13 @@
         return `
           <div class="stock-card ${empty ? "empty" : low ? "low" : ""}">
             <div class="stock-top">
-              <div>
+              <div class="stock-main">
                 <div class="stock-name">${escapeHtml(med.name)}</div>
-                <div class="small muted">${Number(med.currentUnits || 0)} de ${Number(med.unitsPerBox || 0)} ud/caja · ${depletionText(med)}</div>
+                <div class="stock-days">
+                  <span class="stock-days-num">${days}</span>
+                  <span class="stock-days-label">días</span>
+                </div>
+                <div class="stock-detail">${Number(med.currentUnits || 0)} de ${Number(med.unitsPerBox || 0)} ud · ${depletionText(med)}</div>
               </div>
               ${alertChip}
             </div>
@@ -1103,15 +1475,16 @@
         return;
       }
       wrap.innerHTML = state.meds.map(med => `
-        <div class="med-item">
+        <div class="med-item${med.active ? "" : " paused"}">
           <div class="med-item-top">
-            <div>
+            <div class="med-info">
               <div class="med-title">${escapeHtml(med.name)} ${med.active ? "" : `<span class="chip neutral">Pausado</span>`}</div>
-              <div class="dose-meta">${(med.times || []).join(", ")} · Caja ${med.unitsPerBox} ud · quedan ${med.currentUnits}</div>
+              <div class="med-times">${(med.times || []).map(t => `<span class="time-chip">${t}</span>`).join("")}</div>
+              <div class="dose-meta" style="margin-top:5px">Caja ${med.unitsPerBox} ud · quedan ${med.currentUnits} ud</div>
             </div>
             <div class="med-actions">
-              <button class="btn-ghost btn-small" onclick="openMedForm('${med.id}')">Editar</button>
-              <button class="btn-danger btn-small" onclick="deleteMed('${med.id}')">Eliminar</button>
+              <button class="btn-ghost btn-xs" onclick="openMedForm('${med.id}')">Editar</button>
+              <button class="btn-danger btn-xs" onclick="deleteMed('${med.id}')">Eliminar</button>
             </div>
           </div>
         </div>
@@ -1166,14 +1539,14 @@
 
     function openModal(html, type = "generic"){
       currentModal = type;
-      document.getElementById("modal").innerHTML = html;
+      document.getElementById("modal").innerHTML = '<div class="modal-handle"></div>' + html;
       document.getElementById("modalBackdrop").classList.add("show");
     }
 
     function closeModal(){
       currentModal = null;
       document.getElementById("modalBackdrop").classList.remove("show");
-      document.getElementById("modal").innerHTML = "";
+      document.getElementById("modal").innerHTML = '<div class="modal-handle"></div>';
     }
 
     function showAlarmModal(log){
@@ -1188,7 +1561,7 @@
           <button class="xbtn" onclick="closeModal()">×</button>
         </div>
 
-        <div class="install-note">
+        <div class="modal-note">
           Si no tienes el medicamento a mano, pospón la alarma. Si la pospones, el check se moverá a 2 minutos después de la nueva alarma.
         </div>
 
@@ -1219,9 +1592,9 @@
 
         <div class="checkline">
           <input type="checkbox" id="takenCheck">
-          <div>
+          <div class="checkline-text">
             <label for="takenCheck">Confirmo que ya he tomado este medicamento.</label>
-            <div class="small muted">Al confirmar, se descuenta 1 unidad del stock y se guarda el registro con fecha y hora.</div>
+            <div class="hint">Al confirmar, se descuenta 1 unidad del stock y se guarda el registro con fecha y hora.</div>
           </div>
         </div>
 
@@ -1332,9 +1705,9 @@
           </div>
           <div class="checkline">
             <input type="checkbox" id="medActive" ${med?.active === false ? "" : "checked"}>
-            <div>
+            <div class="checkline-text">
               <label for="medActive">Medicamento activo</label>
-              <div class="small muted">Si lo pausas, no se crearán nuevas tomas diarias.</div>
+              <div class="hint">Si lo pausas, no se crearán nuevas tomas diarias.</div>
             </div>
           </div>
           <div class="modal-actions">
@@ -1527,6 +1900,16 @@
           document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
           document.getElementById(btn.dataset.target)?.scrollIntoView({block:"start"});
+
+          // Show/hide sections for mobile single-panel view
+          const target = btn.dataset.target;
+          document.querySelectorAll(".view-section").forEach(s => {
+            s.classList.toggle("active", s.id === target);
+          });
+
+          // Show FAB only on meds section
+          const fab = document.getElementById("fabAddMed");
+          fab.classList.toggle("visible", target === "sectionMeds");
         });
       });
 
