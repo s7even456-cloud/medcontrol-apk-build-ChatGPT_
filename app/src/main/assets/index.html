@@ -1,0 +1,1571 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#116A5B" />
+  <meta name="description" content="Control diario de medicación, recordatorios, confirmaciones y stock." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <title>MedControl Diario</title>
+  <style>
+    :root{
+      --bg:#F4F7F5;
+      --card:#FFFFFF;
+      --text:#17221F;
+      --muted:#64706B;
+      --line:#DDE6E1;
+      --brand:#116A5B;
+      --brand-2:#0C4E43;
+      --accent:#F0A33A;
+      --danger:#B42318;
+      --danger-bg:#FFE9E7;
+      --ok:#177245;
+      --ok-bg:#E7F6EF;
+      --warn:#946200;
+      --warn-bg:#FFF4D8;
+      --info:#174EA6;
+      --info-bg:#EAF1FF;
+      --shadow:0 16px 40px rgba(14, 32, 27, .10);
+      --radius:22px;
+      --radius-sm:14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(17,106,91,.13), transparent 28%),
+        radial-gradient(circle at 90% 5%, rgba(240,163,58,.14), transparent 24%),
+        var(--bg);
+      min-height:100svh;
+    }
+
+    button, input, select, textarea{
+      font:inherit;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius:999px;
+      padding:12px 16px;
+      font-weight:750;
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+      touch-action:manipulation;
+    }
+    button:active{transform:scale(.98)}
+    button:disabled{opacity:.45; cursor:not-allowed}
+
+    .app{
+      width:min(1120px, 100%);
+      margin:0 auto;
+      padding:18px 14px 92px;
+    }
+
+    header.hero{
+      position:relative;
+      overflow:hidden;
+      border-radius:30px;
+      padding:24px 20px;
+      background:linear-gradient(135deg, #0E5E51, #153C36 70%);
+      color:white;
+      box-shadow:var(--shadow);
+      min-height:170px;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      width:260px;
+      height:260px;
+      border-radius:50%;
+      background:rgba(255,255,255,.08);
+      right:-70px;
+      top:-90px;
+    }
+    .hero-top{
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .brandline{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo{
+      width:48px;
+      height:48px;
+      border-radius:16px;
+      background:rgba(255,255,255,.14);
+      display:grid;
+      place-items:center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+      flex:0 0 auto;
+    }
+    .logo svg{width:28px;height:28px}
+    h1{
+      margin:0;
+      font-size:clamp(1.6rem, 3.5vw, 2.45rem);
+      letter-spacing:-.04em;
+      line-height:1.04;
+    }
+    .subtitle{
+      margin:8px 0 0;
+      color:rgba(255,255,255,.80);
+      max-width:62ch;
+      line-height:1.42;
+      font-size:.98rem;
+    }
+    .status-pill{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      border-radius:999px;
+      padding:8px 11px;
+      background:rgba(255,255,255,.12);
+      color:white;
+      font-size:.82rem;
+      font-weight:750;
+      white-space:nowrap;
+    }
+    .pulse{
+      width:9px;height:9px;border-radius:50%;
+      background:#67E8A4;
+      box-shadow:0 0 0 6px rgba(103,232,164,.15);
+    }
+    .hero-actions{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:20px;
+    }
+
+    .btn-primary{
+      background:var(--brand);
+      color:white;
+      box-shadow:0 10px 22px rgba(17,106,91,.22);
+    }
+    .btn-primary:hover{background:var(--brand-2)}
+    .btn-light{
+      background:rgba(255,255,255,.95);
+      color:#123E36;
+    }
+    .btn-ghost{
+      background:#EEF4F1;
+      color:#123E36;
+    }
+    .btn-warning{
+      background:var(--warn-bg);
+      color:var(--warn);
+    }
+    .btn-danger{
+      background:var(--danger-bg);
+      color:var(--danger);
+    }
+    .btn-ok{
+      background:var(--ok);
+      color:white;
+    }
+    .btn-small{
+      padding:9px 12px;
+      font-size:.87rem;
+    }
+
+    .grid{
+      display:grid;
+      gap:14px;
+      margin-top:16px;
+    }
+    @media(min-width:860px){
+      .grid-main{
+        grid-template-columns:1.15fr .85fr;
+        align-items:start;
+      }
+      .cards-3{
+        grid-template-columns:repeat(3, minmax(0,1fr));
+      }
+    }
+
+    .card{
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border:1px solid rgba(221,230,225,.86);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .card h2{
+      margin:0;
+      font-size:1.16rem;
+      letter-spacing:-.02em;
+    }
+    .card-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .muted{color:var(--muted)}
+    .small{font-size:.88rem}
+    .tiny{font-size:.76rem}
+    .strong{font-weight:800}
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:14px 0;
+    }
+
+    .summary-stat{
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+      min-height:112px;
+    }
+    .summary-stat .value{
+      font-size:2rem;
+      letter-spacing:-.05em;
+      font-weight:900;
+      line-height:1;
+    }
+    .summary-stat .label{
+      color:var(--muted);
+      font-weight:650;
+    }
+
+    .dose-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .dose-row{
+      display:grid;
+      grid-template-columns: auto 1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:13px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+    }
+    .time-badge{
+      background:#EAF4F1;
+      color:#0E5E51;
+      font-weight:900;
+      min-width:65px;
+      text-align:center;
+      border-radius:14px;
+      padding:10px 8px;
+      letter-spacing:-.01em;
+    }
+    .med-title{
+      font-weight:900;
+      letter-spacing:-.01em;
+    }
+    .dose-meta{
+      margin-top:3px;
+      color:var(--muted);
+      font-size:.86rem;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      font-weight:850;
+      font-size:.79rem;
+      white-space:nowrap;
+    }
+    .chip.ok{background:var(--ok-bg); color:var(--ok)}
+    .chip.warn{background:var(--warn-bg); color:var(--warn)}
+    .chip.danger{background:var(--danger-bg); color:var(--danger)}
+    .chip.info{background:var(--info-bg); color:var(--info)}
+    .chip.neutral{background:#EEF2F0;color:#44504B}
+
+    .stock-card{
+      position:relative;
+      overflow:hidden;
+      border-radius:20px;
+      border:1px solid var(--line);
+      background:#fff;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .stock-card.low{
+      border-color:#F4C36A;
+      background:linear-gradient(135deg, #FFF9E9, #fff);
+    }
+    .stock-card.empty{
+      border-color:#FFB4AC;
+      background:linear-gradient(135deg, #FFF1EF, #fff);
+    }
+    .stock-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .stock-name{
+      font-size:1rem;
+      font-weight:900;
+    }
+    .progress{
+      width:100%;
+      height:10px;
+      border-radius:999px;
+      background:#E9EFEC;
+      overflow:hidden;
+    }
+    .progress span{
+      display:block;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--brand), #23A283);
+      width:0%;
+    }
+    .stock-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .med-list{
+      display:grid;
+      gap:10px;
+    }
+    .med-item{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+      padding:13px;
+      display:grid;
+      gap:10px;
+    }
+    .med-item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .med-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0 8px;
+      font-size:.88rem;
+    }
+    th{
+      text-align:left;
+      color:var(--muted);
+      font-size:.76rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      padding:0 10px;
+    }
+    td{
+      background:#fff;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:10px;
+      vertical-align:middle;
+    }
+    td:first-child{
+      border-left:1px solid var(--line);
+      border-radius:14px 0 0 14px;
+    }
+    td:last-child{
+      border-right:1px solid var(--line);
+      border-radius:0 14px 14px 0;
+    }
+
+    .bottom-nav{
+      position:fixed;
+      z-index:30;
+      left:50%;
+      bottom:calc(10px + var(--safe-bottom));
+      transform:translateX(-50%);
+      width:min(680px, calc(100% - 20px));
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(221,230,225,.9);
+      box-shadow:0 18px 44px rgba(14,32,27,.18);
+      border-radius:999px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:4px;
+      padding:6px;
+      backdrop-filter: blur(12px);
+    }
+    .nav-btn{
+      background:transparent;
+      color:#4A5651;
+      border-radius:999px;
+      padding:10px 8px;
+      font-size:.78rem;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+    }
+    .nav-btn.active{
+      background:#E8F2EF;
+      color:#0E5E51;
+    }
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:80;
+      background:rgba(10,18,16,.50);
+      backdrop-filter: blur(6px);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding:14px;
+    }
+    .modal-backdrop.show{display:flex}
+    .modal{
+      width:min(620px,100%);
+      max-height:92svh;
+      overflow:auto;
+      background:#fff;
+      border-radius:28px;
+      box-shadow:0 30px 70px rgba(0,0,0,.30);
+      padding:18px;
+      animation:rise .16s ease-out;
+    }
+    @keyframes rise{
+      from{transform:translateY(18px); opacity:.6}
+      to{transform:translateY(0); opacity:1}
+    }
+    .modal-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .modal h3{
+      font-size:1.45rem;
+      margin:0;
+      letter-spacing:-.03em;
+    }
+    .xbtn{
+      width:38px;height:38px;
+      padding:0;
+      background:#EFF3F1;
+      color:#26332F;
+      border-radius:50%;
+      flex:0 0 auto;
+    }
+    .field{
+      display:grid;
+      gap:7px;
+      margin:12px 0;
+    }
+    label{
+      color:#26332F;
+      font-weight:800;
+      font-size:.9rem;
+    }
+    input, textarea, select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:13px 14px;
+      background:#FAFCFB;
+      color:var(--text);
+      outline:none;
+    }
+    input:focus, textarea:focus, select:focus{
+      border-color:rgba(17,106,91,.55);
+      box-shadow:0 0 0 4px rgba(17,106,91,.09);
+    }
+    .modal-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+    .checkline{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:12px;
+      border-radius:16px;
+      background:#F5F8F6;
+      border:1px solid var(--line);
+      margin:12px 0;
+    }
+    .checkline input{
+      width:22px;height:22px;margin-top:1px;
+      accent-color:var(--brand);
+      flex:0 0 auto;
+    }
+
+    .toast{
+      position:fixed;
+      z-index:120;
+      left:50%;
+      bottom:calc(82px + var(--safe-bottom));
+      transform:translateX(-50%) translateY(20px);
+      opacity:0;
+      pointer-events:none;
+      transition:.18s ease;
+      width:min(560px, calc(100% - 26px));
+      background:#13251F;
+      color:white;
+      border-radius:18px;
+      padding:13px 15px;
+      box-shadow:0 20px 50px rgba(0,0,0,.25);
+      font-weight:700;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
+    .empty-state{
+      border:1px dashed #BAC7C1;
+      border-radius:18px;
+      padding:22px 14px;
+      text-align:center;
+      color:var(--muted);
+      background:#FAFCFB;
+    }
+
+    .install-note{
+      border-radius:18px;
+      background:#F6FBF9;
+      border:1px solid #CFE4DC;
+      padding:13px;
+      color:#244D44;
+      line-height:1.45;
+    }
+
+    @media(max-width:560px){
+      .hero{border-radius:24px}
+      .hero-top{flex-direction:column}
+      .status-pill{align-self:flex-start}
+      .dose-row{
+        grid-template-columns:auto 1fr;
+      }
+      .dose-row .chip{
+        grid-column:1 / -1;
+        justify-self:start;
+      }
+      table{font-size:.8rem}
+      .hide-sm{display:none}
+      .modal{border-radius:24px}
+      .card{padding:14px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="brandline">
+            <div class="logo" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M8.5 3.8h7A2.5 2.5 0 0 1 18 6.3v11.4a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 17.7V6.3a2.5 2.5 0 0 1 2.5-2.5Z" stroke="white" stroke-width="1.7"/>
+                <path d="M9 8.5h6M9 12h6M9 15.5h3.3" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <h1>MedControl Diario</h1>
+              <p class="subtitle">Recordatorios, check de confirmación a los 2 minutos, historial de tomas y aviso de compra antes de quedarte sin medicación.</p>
+            </div>
+          </div>
+        </div>
+        <div class="status-pill"><span class="pulse"></span><span id="clock">--:--</span></div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="btn-light" id="btnEnableNotifications">Activar notificaciones</button>
+        <button class="btn-light" id="btnInstall" hidden>Instalar en móvil</button>
+        <button class="btn-light" id="btnTestAlarm">Probar alarma</button>
+      </div>
+    </header>
+
+    <section class="grid cards-3">
+      <article class="card summary-stat">
+        <span class="label">Tomas de hoy</span>
+        <span class="value" id="statToday">0/0</span>
+        <span class="small muted" id="statTodayText">Sin datos</span>
+      </article>
+      <article class="card summary-stat">
+        <span class="label">Adherencia registrada</span>
+        <span class="value" id="statAdherence">--%</span>
+        <span class="small muted">Confirmadas frente a olvidadas</span>
+      </article>
+      <article class="card summary-stat">
+        <span class="label">Avisos de compra</span>
+        <span class="value" id="statLowStock">0</span>
+        <span class="small muted">Medicamentos con ≤ 3 días estimados</span>
+      </article>
+    </section>
+
+    <main class="grid grid-main">
+      <section class="grid">
+        <article class="card" id="sectionToday">
+          <div class="card-head">
+            <div>
+              <h2>Tomas de hoy</h2>
+              <div class="small muted" id="todayLabel">--</div>
+            </div>
+            <button class="btn-ghost btn-small" id="btnRefresh">Actualizar</button>
+          </div>
+          <div class="dose-list" id="todayDoses"></div>
+        </article>
+
+        <article class="card" id="sectionHistory">
+          <div class="card-head">
+            <div>
+              <h2>Registro de control</h2>
+              <div class="small muted">Historial por fecha y medicamento</div>
+            </div>
+            <button class="btn-ghost btn-small" id="btnExport">Exportar</button>
+          </div>
+          <div id="historyTable"></div>
+        </article>
+      </section>
+
+      <aside class="grid">
+        <article class="card" id="sectionStock">
+          <div class="card-head">
+            <div>
+              <h2>Stock y compra</h2>
+              <div class="small muted">Aviso automático 3 días antes</div>
+            </div>
+          </div>
+          <div class="grid" id="stockList"></div>
+        </article>
+
+        <article class="card" id="sectionMeds">
+          <div class="card-head">
+            <div>
+              <h2>Medicamentos</h2>
+              <div class="small muted">Añadir, editar, eliminar y programar alarmas</div>
+            </div>
+            <button class="btn-primary btn-small" id="btnAddMed">Añadir</button>
+          </div>
+          <div class="med-list" id="medList"></div>
+        </article>
+
+        <article class="card" id="sectionSettings">
+          <div class="card-head">
+            <div>
+              <h2>Ajustes</h2>
+              <div class="small muted">Configuración local de la app</div>
+            </div>
+          </div>
+          <div class="install-note">
+            Para que sea instalable, abre esta app desde HTTPS o localhost. En Android/Chrome aparecerá “Instalar en móvil” o “Añadir a pantalla de inicio”.
+          </div>
+          <div class="field">
+            <label>Minutos hasta solicitar el check</label>
+            <input type="number" id="settingCheckDelay" min="1" max="60" step="1" value="2">
+          </div>
+          <div class="field">
+            <label>Días mínimos para aviso de compra</label>
+            <input type="number" id="settingLowStockDays" min="1" max="30" step="1" value="3">
+          </div>
+          <div class="modal-actions">
+            <button class="btn-primary" id="btnSaveSettings">Guardar ajustes</button>
+            <button class="btn-ghost" id="btnImport">Importar copia</button>
+            <button class="btn-danger" id="btnReset">Reiniciar datos</button>
+          </div>
+          <input type="file" id="importFile" accept="application/json" hidden>
+        </article>
+      </aside>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button class="nav-btn active" data-target="sectionToday">Hoy</button>
+    <button class="nav-btn" data-target="sectionStock">Stock</button>
+    <button class="nav-btn" data-target="sectionMeds">Meds</button>
+    <button class="nav-btn" data-target="sectionHistory">Registro</button>
+  </nav>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const APP_VERSION = "1.0.0";
+    const STORAGE_KEY = "medcontrol_diario_v1";
+    const CHECK_INTERVAL_MS = 10000;
+    let state = null;
+    let currentModal = null;
+    let deferredInstallPrompt = null;
+    let audioCtx = null;
+
+    const defaultState = () => ({
+      version: APP_VERSION,
+      createdAt: new Date().toISOString(),
+      settings: {
+        checkDelayMinutes: 2,
+        lowStockDays: 3
+      },
+      meds: [
+        {
+          id: cryptoId(),
+          name: "Clopidogre",
+          unitsPerBox: 28,
+          currentUnits: 27,
+          times: ["14:57"],
+          active: true,
+          notes: ""
+        },
+        {
+          id: cryptoId(),
+          name: "Ezetimiba",
+          unitsPerBox: 28,
+          currentUnits: 27,
+          times: ["14:57"],
+          active: true,
+          notes: ""
+        },
+        {
+          id: cryptoId(),
+          name: "Dercutane",
+          unitsPerBox: 50,
+          currentUnits: 49,
+          times: ["23:57"],
+          active: true,
+          notes: ""
+        }
+      ],
+      logs: []
+    });
+
+    function cryptoId(){
+      if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return "id_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function pad(n){ return String(n).padStart(2,"0"); }
+
+    function dateKey(date = new Date()){
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+    }
+
+    function humanDate(key){
+      const [y,m,d] = key.split("-").map(Number);
+      return new Intl.DateTimeFormat("es-ES", {weekday:"long", day:"2-digit", month:"long", year:"numeric"}).format(new Date(y, m-1, d));
+    }
+
+    function parseLocalDateTime(dayKey, time){
+      const [y,m,d] = dayKey.split("-").map(Number);
+      const [hh,mm] = time.split(":").map(Number);
+      return new Date(y, m-1, d, hh, mm, 0, 0);
+    }
+
+    function addMinutes(date, minutes){
+      return new Date(date.getTime() + minutes * 60000);
+    }
+
+    function addDays(date, days){
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function minutesFromNow(iso){
+      return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now())/60000));
+    }
+
+    function load(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        state = defaultState();
+        save();
+        return;
+      }
+      try{
+        state = JSON.parse(raw);
+        if(!state.settings) state.settings = {checkDelayMinutes:2, lowStockDays:3};
+        if(!Array.isArray(state.meds)) state.meds = [];
+        if(!Array.isArray(state.logs)) state.logs = [];
+      }catch(e){
+        console.error(e);
+        state = defaultState();
+        save();
+      }
+    }
+
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function toast(message){
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 3400);
+    }
+
+    function statusLabel(status){
+      const map = {
+        scheduled: ["Programada","neutral"],
+        snoozed: ["Pospuesta","info"],
+        alarm_ringed: ["Alarma sonada","warn"],
+        awaiting_check: ["Check pendiente","warn"],
+        taken: ["Tomada","ok"],
+        missed: ["Olvidada","danger"]
+      };
+      return map[status] || ["Sin estado","neutral"];
+    }
+
+    function chip(status){
+      const [label, cls] = statusLabel(status);
+      return `<span class="chip ${cls}">${label}</span>`;
+    }
+
+    function medById(id){
+      return state.meds.find(m => m.id === id);
+    }
+
+    function ensureDosesForDate(dayKey = dateKey()){
+      let changed = false;
+      for(const med of state.meds.filter(m => m.active)){
+        const times = [...new Set((med.times || []).filter(Boolean))].sort();
+        for(const time of times){
+          const exists = state.logs.some(l => l.medId === med.id && l.scheduledDate === dayKey && l.scheduledTime === time);
+          if(!exists){
+            state.logs.push({
+              id: `${med.id}_${dayKey}_${time}`,
+              medId: med.id,
+              medNameSnapshot: med.name,
+              scheduledDate: dayKey,
+              scheduledTime: time,
+              scheduledAt: parseLocalDateTime(dayKey, time).toISOString(),
+              status: "scheduled",
+              alarmAt: null,
+              checkDueAt: null,
+              confirmedAt: null,
+              missedAt: null,
+              snoozedUntil: null,
+              createdAt: new Date().toISOString()
+            });
+            changed = true;
+          }
+        }
+      }
+      if(changed) save();
+    }
+
+    function closeOldOpenDoses(){
+      const today = dateKey();
+      let changed = false;
+      for(const log of state.logs){
+        if(log.scheduledDate < today && !["taken","missed"].includes(log.status)){
+          log.status = "missed";
+          log.missedAt = new Date().toISOString();
+          changed = true;
+        }
+      }
+      if(changed) save();
+    }
+
+    function currentDueLogs(){
+      return state.logs
+        .filter(l => l.scheduledDate === dateKey() && !["taken","missed"].includes(l.status))
+        .sort((a,b) => a.scheduledTime.localeCompare(b.scheduledTime));
+    }
+
+    async function showNotification(title, body){
+      try{
+        if(!("Notification" in window)) return;
+        if(Notification.permission !== "granted") return;
+        if("serviceWorker" in navigator){
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification(title, {
+            body,
+            icon: "icons/icon-192.png",
+            badge: "icons/icon-192.png",
+            tag: "medcontrol",
+            renotify: true
+          });
+        }else{
+          new Notification(title, { body, icon:"icons/icon-192.png" });
+        }
+      }catch(e){
+        console.warn("Notification error", e);
+      }
+    }
+
+    function beep(times = 2){
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        let start = audioCtx.currentTime;
+        for(let i=0; i<times; i++){
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.0001, start + i*.28);
+          gain.gain.exponentialRampToValueAtTime(.22, start + i*.28 + .02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + i*.28 + .18);
+          osc.connect(gain).connect(audioCtx.destination);
+          osc.start(start + i*.28);
+          osc.stop(start + i*.28 + .20);
+        }
+      }catch(e){
+        console.warn("Audio blocked until user gesture", e);
+      }
+    }
+
+    function runScheduler(){
+      ensureDosesForDate();
+      closeOldOpenDoses();
+      const now = new Date();
+
+      for(const log of currentDueLogs()){
+        const alarmTarget = log.snoozedUntil ? new Date(log.snoozedUntil) : new Date(log.scheduledAt);
+
+        if((log.status === "scheduled" || log.status === "snoozed") && now >= alarmTarget){
+          log.status = "alarm_ringed";
+          log.alarmAt = now.toISOString();
+          log.checkDueAt = addMinutes(now, Number(state.settings.checkDelayMinutes || 2)).toISOString();
+          log.snoozedUntil = null;
+          save();
+          render();
+          const med = medById(log.medId);
+          showAlarmModal(log);
+          beep(3);
+          showNotification(`Hora de tomar ${med ? med.name : log.medNameSnapshot}`, `El check de confirmación aparecerá en ${state.settings.checkDelayMinutes} min.`);
+          return;
+        }
+
+        if(log.status === "alarm_ringed" && log.checkDueAt && now >= new Date(log.checkDueAt)){
+          log.status = "awaiting_check";
+          save();
+          render();
+          showCheckModal(log);
+          beep(2);
+          showNotification("Confirma la toma", `${medById(log.medId)?.name || log.medNameSnapshot}: marca el check si ya la tomaste.`);
+          return;
+        }
+
+        if(log.status === "awaiting_check"){
+          showCheckModal(log);
+          return;
+        }
+      }
+
+      renderClock();
+    }
+
+    function renderClock(){
+      const now = new Date();
+      document.getElementById("clock").textContent = new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(now);
+    }
+
+    function render(){
+      renderClock();
+      document.getElementById("todayLabel").textContent = humanDate(dateKey());
+      document.getElementById("settingCheckDelay").value = state.settings.checkDelayMinutes;
+      document.getElementById("settingLowStockDays").value = state.settings.lowStockDays;
+
+      renderStats();
+      renderToday();
+      renderStock();
+      renderMeds();
+      renderHistory();
+    }
+
+    function todayLogs(){
+      ensureDosesForDate();
+      return state.logs
+        .filter(l => l.scheduledDate === dateKey())
+        .sort((a,b) => a.scheduledTime.localeCompare(b.scheduledTime) || a.medNameSnapshot.localeCompare(b.medNameSnapshot));
+    }
+
+    function renderStats(){
+      const logs = todayLogs();
+      const taken = logs.filter(l => l.status === "taken").length;
+      document.getElementById("statToday").textContent = `${taken}/${logs.length}`;
+      document.getElementById("statTodayText").textContent = logs.length ? `${logs.length - taken} pendientes u olvidadas` : "Sin tomas programadas";
+
+      const completed = state.logs.filter(l => ["taken","missed"].includes(l.status));
+      const takenAll = completed.filter(l => l.status === "taken").length;
+      const pct = completed.length ? Math.round((takenAll / completed.length) * 100) : null;
+      document.getElementById("statAdherence").textContent = pct === null ? "--%" : `${pct}%`;
+
+      const low = state.meds.filter(m => m.active && remainingDays(m) <= Number(state.settings.lowStockDays || 3)).length;
+      document.getElementById("statLowStock").textContent = low;
+    }
+
+    function renderToday(){
+      const wrap = document.getElementById("todayDoses");
+      const logs = todayLogs();
+
+      if(!logs.length){
+        wrap.innerHTML = `<div class="empty-state">No hay tomas programadas para hoy.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = logs.map(log => {
+        const med = medById(log.medId);
+        const name = med?.name || log.medNameSnapshot;
+        const nextInfo = log.status === "alarm_ringed" && log.checkDueAt
+          ? `Check disponible en ${minutesFromNow(log.checkDueAt)} min`
+          : log.status === "snoozed" && log.snoozedUntil
+            ? `Nueva alarma en ${minutesFromNow(log.snoozedUntil)} min`
+            : log.status === "taken" && log.confirmedAt
+              ? `Confirmada a las ${new Intl.DateTimeFormat("es-ES",{hour:"2-digit",minute:"2-digit"}).format(new Date(log.confirmedAt))}`
+              : log.status === "missed" ? "Registrada como no tomada" : "Pendiente";
+        return `
+          <div class="dose-row">
+            <div class="time-badge">${log.scheduledTime}</div>
+            <div>
+              <div class="med-title">${escapeHtml(name)}</div>
+              <div class="dose-meta">${nextInfo}</div>
+            </div>
+            <div>${chip(log.status)}</div>
+          </div>`;
+      }).join("");
+    }
+
+    function remainingDays(med){
+      const dosesPerDay = Math.max(1, (med.times || []).length);
+      return Math.floor(Number(med.currentUnits || 0) / dosesPerDay);
+    }
+
+    function depletionText(med){
+      const days = remainingDays(med);
+      if(Number(med.currentUnits || 0) <= 0) return "Sin unidades";
+      const target = addDays(new Date(), Math.max(0, days - 1));
+      return `${days} día${days === 1 ? "" : "s"} · hasta aprox. ${new Intl.DateTimeFormat("es-ES", {day:"2-digit", month:"2-digit"}).format(target)}`;
+    }
+
+    function renderStock(){
+      const wrap = document.getElementById("stockList");
+      const meds = state.meds.filter(m => m.active);
+      if(!meds.length){
+        wrap.innerHTML = `<div class="empty-state">Añade medicamentos para controlar el stock.</div>`;
+        return;
+      }
+      wrap.innerHTML = meds.map(med => {
+        const pct = Math.max(0, Math.min(100, Math.round((Number(med.currentUnits || 0) / Number(med.unitsPerBox || 1)) * 100)));
+        const days = remainingDays(med);
+        const low = days <= Number(state.settings.lowStockDays || 3);
+        const empty = Number(med.currentUnits || 0) <= 0;
+        const alertChip = empty ? `<span class="chip danger">Agotado</span>` : low ? `<span class="chip warn">Comprar ya</span>` : `<span class="chip ok">Stock correcto</span>`;
+        return `
+          <div class="stock-card ${empty ? "empty" : low ? "low" : ""}">
+            <div class="stock-top">
+              <div>
+                <div class="stock-name">${escapeHtml(med.name)}</div>
+                <div class="small muted">${Number(med.currentUnits || 0)} de ${Number(med.unitsPerBox || 0)} ud/caja · ${depletionText(med)}</div>
+              </div>
+              ${alertChip}
+            </div>
+            <div class="progress" aria-label="Stock restante"><span style="width:${pct}%"></span></div>
+            <div class="stock-actions">
+              <button class="btn-ghost btn-small" onclick="addBox('${med.id}')">Añadir caja</button>
+              <button class="btn-ghost btn-small" onclick="adjustStock('${med.id}')">Ajustar stock</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderMeds(){
+      const wrap = document.getElementById("medList");
+      if(!state.meds.length){
+        wrap.innerHTML = `<div class="empty-state">Todavía no hay medicamentos.</div>`;
+        return;
+      }
+      wrap.innerHTML = state.meds.map(med => `
+        <div class="med-item">
+          <div class="med-item-top">
+            <div>
+              <div class="med-title">${escapeHtml(med.name)} ${med.active ? "" : `<span class="chip neutral">Pausado</span>`}</div>
+              <div class="dose-meta">${(med.times || []).join(", ")} · Caja ${med.unitsPerBox} ud · quedan ${med.currentUnits}</div>
+            </div>
+            <div class="med-actions">
+              <button class="btn-ghost btn-small" onclick="openMedForm('${med.id}')">Editar</button>
+              <button class="btn-danger btn-small" onclick="deleteMed('${med.id}')">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderHistory(){
+      const wrap = document.getElementById("historyTable");
+      const rows = [...state.logs]
+        .sort((a,b) => (b.scheduledDate + b.scheduledTime).localeCompare(a.scheduledDate + a.scheduledTime))
+        .slice(0, 80);
+
+      if(!rows.length){
+        wrap.innerHTML = `<div class="empty-state">El registro aparecerá aquí cuando se generen tomas.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Medicamento</th>
+              <th>Estado</th>
+              <th class="hide-sm">Confirmación</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(l => `
+              <tr>
+                <td>${formatShortDate(l.scheduledDate)}</td>
+                <td>${l.scheduledTime}</td>
+                <td>${escapeHtml(medById(l.medId)?.name || l.medNameSnapshot)}</td>
+                <td>${chip(l.status)}</td>
+                <td class="hide-sm">${l.confirmedAt ? formatTime(l.confirmedAt) : l.missedAt ? "No tomada" : "—"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function formatShortDate(key){
+      const [y,m,d] = key.split("-").map(Number);
+      return new Intl.DateTimeFormat("es-ES", {day:"2-digit", month:"2-digit", year:"2-digit"}).format(new Date(y,m-1,d));
+    }
+
+    function formatTime(iso){
+      return new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(new Date(iso));
+    }
+
+    function openModal(html, type = "generic"){
+      currentModal = type;
+      document.getElementById("modal").innerHTML = html;
+      document.getElementById("modalBackdrop").classList.add("show");
+    }
+
+    function closeModal(){
+      currentModal = null;
+      document.getElementById("modalBackdrop").classList.remove("show");
+      document.getElementById("modal").innerHTML = "";
+    }
+
+    function showAlarmModal(log){
+      if(currentModal === "check") return;
+      const med = medById(log.medId);
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Hora de tomar ${escapeHtml(med?.name || log.medNameSnapshot)}</h3>
+            <p class="muted">Alarma de las <strong>${log.scheduledTime}</strong>. El check obligatorio aparecerá en ${state.settings.checkDelayMinutes} minutos.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+
+        <div class="install-note">
+          Si no tienes el medicamento a mano, pospón la alarma. Si la pospones, el check se moverá a 2 minutos después de la nueva alarma.
+        </div>
+
+        <div class="field">
+          <label>Posponer alarma</label>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+            <input type="number" id="snoozeMinutes" min="1" max="720" value="10" inputmode="numeric">
+            <button class="btn-warning" onclick="snoozeDose('${log.id}')">Posponer</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="closeModal()">Entendido</button>
+        </div>
+      `, "alarm");
+    }
+
+    function showCheckModal(log){
+      const med = medById(log.medId);
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Confirma la toma</h3>
+            <p class="muted">${escapeHtml(med?.name || log.medNameSnapshot)} · programada a las <strong>${log.scheduledTime}</strong>.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+
+        <div class="checkline">
+          <input type="checkbox" id="takenCheck">
+          <div>
+            <label for="takenCheck">Confirmo que ya he tomado este medicamento.</label>
+            <div class="small muted">Al confirmar, se descuenta 1 unidad del stock y se guarda el registro con fecha y hora.</div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-ok" onclick="confirmTaken('${log.id}')">Guardar como tomada</button>
+          <button class="btn-danger" onclick="markMissed('${log.id}')">Marcar como olvidada/no tomada</button>
+          <button class="btn-warning" onclick="resnoozeFromCheck('${log.id}')">Posponer otra vez</button>
+        </div>
+      `, "check");
+    }
+
+    function snoozeDose(logId){
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      const minutes = Math.max(1, Number(document.getElementById("snoozeMinutes")?.value || 10));
+      log.status = "snoozed";
+      log.snoozedUntil = addMinutes(new Date(), minutes).toISOString();
+      log.alarmAt = null;
+      log.checkDueAt = null;
+      save();
+      closeModal();
+      render();
+      toast(`Alarma pospuesta ${minutes} min.`);
+    }
+
+    function resnoozeFromCheck(logId){
+      const minutes = Number(prompt("¿Cuántos minutos quieres posponer?", "10"));
+      if(!minutes || minutes < 1) return;
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      log.status = "snoozed";
+      log.snoozedUntil = addMinutes(new Date(), minutes).toISOString();
+      log.alarmAt = null;
+      log.checkDueAt = null;
+      save();
+      closeModal();
+      render();
+      toast(`Alarma pospuesta ${minutes} min.`);
+    }
+
+    function confirmTaken(logId){
+      const checkbox = document.getElementById("takenCheck");
+      if(checkbox && !checkbox.checked){
+        toast("Marca primero el check de confirmación.");
+        return;
+      }
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      if(log.status === "taken") return;
+      log.status = "taken";
+      log.confirmedAt = new Date().toISOString();
+      const med = medById(log.medId);
+      if(med){
+        med.currentUnits = Math.max(0, Number(med.currentUnits || 0) - 1);
+      }
+      save();
+      closeModal();
+      render();
+      toast("Toma confirmada y registrada.");
+      const low = med && remainingDays(med) <= Number(state.settings.lowStockDays || 3);
+      if(low) showNotification("Aviso de compra", `${med.name}: quedan ${remainingDays(med)} días estimados de medicación.`);
+    }
+
+    function markMissed(logId){
+      if(!confirm("¿Seguro que quieres registrar esta toma como olvidada/no tomada?")) return;
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      log.status = "missed";
+      log.missedAt = new Date().toISOString();
+      save();
+      closeModal();
+      render();
+      toast("Toma registrada como olvidada/no tomada.");
+    }
+
+    function openMedForm(medId = null){
+      const med = medId ? medById(medId) : null;
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>${med ? "Editar medicamento" : "Añadir medicamento"}</h3>
+            <p class="muted">Configura caja, stock actual y una o varias horas de toma.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+
+        <form id="medForm">
+          <div class="field">
+            <label>Nombre</label>
+            <input id="medName" required value="${escapeAttr(med?.name || "")}" placeholder="Ej. Clopidogrel">
+          </div>
+          <div class="field">
+            <label>Unidades por caja</label>
+            <input id="medUnitsPerBox" type="number" min="1" required value="${med?.unitsPerBox || 28}">
+          </div>
+          <div class="field">
+            <label>Unidades actuales disponibles</label>
+            <input id="medCurrentUnits" type="number" min="0" required value="${med?.currentUnits ?? 0}">
+          </div>
+          <div class="field">
+            <label>Horas de toma</label>
+            <input id="medTimes" required value="${escapeAttr((med?.times || ["09:00"]).join(", "))}" placeholder="14:57, 23:57">
+            <div class="tiny muted">Formato 24 h. Separa varias horas con coma.</div>
+          </div>
+          <div class="field">
+            <label>Notas opcionales</label>
+            <textarea id="medNotes" rows="3" placeholder="Indicaciones, observaciones, etc.">${escapeHtml(med?.notes || "")}</textarea>
+          </div>
+          <div class="checkline">
+            <input type="checkbox" id="medActive" ${med?.active === false ? "" : "checked"}>
+            <div>
+              <label for="medActive">Medicamento activo</label>
+              <div class="small muted">Si lo pausas, no se crearán nuevas tomas diarias.</div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-primary" type="submit">Guardar</button>
+            <button class="btn-ghost" type="button" onclick="closeModal()">Cancelar</button>
+          </div>
+        </form>
+      `, "medform");
+
+      document.getElementById("medForm").addEventListener("submit", (ev) => {
+        ev.preventDefault();
+        const times = normalizeTimes(document.getElementById("medTimes").value);
+        if(!times.length){
+          toast("Introduce al menos una hora válida en formato HH:MM.");
+          return;
+        }
+        const payload = {
+          name: document.getElementById("medName").value.trim(),
+          unitsPerBox: Math.max(1, Number(document.getElementById("medUnitsPerBox").value)),
+          currentUnits: Math.max(0, Number(document.getElementById("medCurrentUnits").value)),
+          times,
+          active: document.getElementById("medActive").checked,
+          notes: document.getElementById("medNotes").value.trim()
+        };
+
+        if(med){
+          Object.assign(med, payload);
+        }else{
+          state.meds.push({ id: cryptoId(), ...payload });
+        }
+        save();
+        ensureDosesForDate();
+        closeModal();
+        render();
+        toast("Medicamento guardado.");
+      });
+    }
+
+    function normalizeTimes(value){
+      return [...new Set(value
+        .split(",")
+        .map(v => v.trim())
+        .filter(Boolean)
+        .map(v => {
+          const m = v.match(/^(\d{1,2}):(\d{2})$/);
+          if(!m) return null;
+          const h = Number(m[1]), min = Number(m[2]);
+          if(h < 0 || h > 23 || min < 0 || min > 59) return null;
+          return `${pad(h)}:${pad(min)}`;
+        })
+        .filter(Boolean))]
+        .sort();
+    }
+
+    function deleteMed(medId){
+      const med = medById(medId);
+      if(!med) return;
+      if(!confirm(`¿Eliminar ${med.name}? Se conservará el historial ya registrado.`)) return;
+      state.meds = state.meds.filter(m => m.id !== medId);
+      save();
+      render();
+      toast("Medicamento eliminado. El historial anterior se mantiene.");
+    }
+
+    function addBox(medId){
+      const med = medById(medId);
+      if(!med) return;
+      med.currentUnits = Number(med.currentUnits || 0) + Number(med.unitsPerBox || 0);
+      save();
+      render();
+      toast(`Añadida 1 caja de ${med.name}.`);
+    }
+
+    function adjustStock(medId){
+      const med = medById(medId);
+      if(!med) return;
+      const val = prompt(`Unidades actuales de ${med.name}:`, String(med.currentUnits || 0));
+      if(val === null) return;
+      const n = Number(val);
+      if(Number.isNaN(n) || n < 0){
+        toast("Stock no válido.");
+        return;
+      }
+      med.currentUnits = Math.floor(n);
+      save();
+      render();
+      toast("Stock actualizado.");
+    }
+
+    function exportData(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `medcontrol-copia-${dateKey()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(file){
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const data = JSON.parse(reader.result);
+          if(!data || !Array.isArray(data.meds) || !Array.isArray(data.logs)) throw new Error("Formato inválido");
+          state = data;
+          save();
+          ensureDosesForDate();
+          render();
+          toast("Copia importada correctamente.");
+        }catch(e){
+          toast("No se pudo importar: archivo JSON no válido.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+      }[s]));
+    }
+    function escapeAttr(str){ return escapeHtml(str).replace(/`/g,"&#096;"); }
+
+    function setupEvents(){
+      document.getElementById("btnEnableNotifications").addEventListener("click", async () => {
+        if(!("Notification" in window)){
+          toast("Este navegador no soporta notificaciones.");
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        toast(perm === "granted" ? "Notificaciones activadas." : "Permiso de notificaciones no concedido.");
+      });
+
+      document.getElementById("btnInstall").addEventListener("click", async () => {
+        if(!deferredInstallPrompt){
+          toast("La instalación aparecerá cuando abras la app desde HTTPS/Chrome compatible.");
+          return;
+        }
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        document.getElementById("btnInstall").hidden = true;
+      });
+
+      document.getElementById("btnTestAlarm").addEventListener("click", () => {
+        beep(3);
+        showNotification("Prueba de alarma", "Las notificaciones funcionan si diste permiso.");
+        toast("Prueba lanzada. Si no suena, toca la pantalla y revisa permisos del navegador.");
+      });
+
+      document.getElementById("btnRefresh").addEventListener("click", () => {
+        ensureDosesForDate();
+        closeOldOpenDoses();
+        render();
+        toast("Datos actualizados.");
+      });
+
+      document.getElementById("btnAddMed").addEventListener("click", () => openMedForm());
+      document.getElementById("btnExport").addEventListener("click", exportData);
+      document.getElementById("btnImport").addEventListener("click", () => document.getElementById("importFile").click());
+      document.getElementById("importFile").addEventListener("change", (ev) => {
+        if(ev.target.files?.[0]) importData(ev.target.files[0]);
+        ev.target.value = "";
+      });
+
+      document.getElementById("btnSaveSettings").addEventListener("click", () => {
+        state.settings.checkDelayMinutes = Math.max(1, Number(document.getElementById("settingCheckDelay").value || 2));
+        state.settings.lowStockDays = Math.max(1, Number(document.getElementById("settingLowStockDays").value || 3));
+        save();
+        render();
+        toast("Ajustes guardados.");
+      });
+
+      document.getElementById("btnReset").addEventListener("click", () => {
+        if(!confirm("Esto borrará medicamentos, historial y stock local. ¿Continuar?")) return;
+        localStorage.removeItem(STORAGE_KEY);
+        load();
+        ensureDosesForDate();
+        render();
+        toast("Datos reiniciados.");
+      });
+
+      document.getElementById("modalBackdrop").addEventListener("click", (ev) => {
+        if(ev.target.id === "modalBackdrop") closeModal();
+      });
+
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById(btn.dataset.target)?.scrollIntoView({block:"start"});
+        });
+      });
+
+      window.addEventListener("beforeinstallprompt", (ev) => {
+        ev.preventDefault();
+        deferredInstallPrompt = ev;
+        document.getElementById("btnInstall").hidden = false;
+      });
+    }
+
+    async function registerServiceWorker(){
+      if("serviceWorker" in navigator){
+        try{
+          await navigator.serviceWorker.register("service-worker.js");
+        }catch(e){
+          console.warn("No se pudo registrar el service worker", e);
+        }
+      }
+    }
+
+    load();
+    ensureDosesForDate();
+    closeOldOpenDoses();
+    setupEvents();
+    registerServiceWorker();
+    render();
+    runScheduler();
+    setInterval(runScheduler, CHECK_INTERVAL_MS);
+
+    // Exponer funciones usadas por botones inline
+    window.openMedForm = openMedForm;
+    window.deleteMed = deleteMed;
+    window.addBox = addBox;
+    window.adjustStock = adjustStock;
+    window.snoozeDose = snoozeDose;
+    window.resnoozeFromCheck = resnoozeFromCheck;
+    window.confirmTaken = confirmTaken;
+    window.markMissed = markMissed;
+    window.closeModal = closeModal;
+  </script>
+</body>
+</html>
