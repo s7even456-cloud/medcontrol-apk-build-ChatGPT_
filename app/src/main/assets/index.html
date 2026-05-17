@@ -1112,6 +1112,13 @@
           <span class="notif-dot default"></span>
           <span class="notif-status-text">Comprobando permiso…</span>
         </div>
+        <div class="field" id="alarmSoundField" style="display:none">
+          <label for="alarmSoundSelect">Sonido de alarma</label>
+          <select id="alarmSoundSelect">
+            <option value="beep">Pitido electrónico (predeterminado)</option>
+          </select>
+          <button class="btn-ghost btn-small" id="btnPreviewSound" style="margin-top:8px;border-radius:var(--radius-sm)">▶ Probar sonido seleccionado</button>
+        </div>
         <div class="settings-actions">
           <button class="btn-ghost" id="btnEnableNotifications">Activar notificaciones</button>
           <button class="btn-ghost" id="btnTestAlarm">Probar alarma</button>
@@ -1427,6 +1434,11 @@
     }
 
     function beep(times = 2){
+      const uri = state?.settings?.alarmSoundUri;
+      if(uri && uri !== "beep" && window.AndroidRingtone){
+        try{ window.AndroidRingtone.playSound(uri); }catch(e){}
+        return;
+      }
       try{
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
         let start = audioCtx.currentTime;
@@ -1762,33 +1774,88 @@
       html += `</div>`;
       gridEl.innerHTML = html;
 
-      // Adherence bars
-      let adhHtml = `<div class="adherence-title">Adherencia por medicamento (últimos ${days} días)</div><div class="adherence-rows">`;
-      for(const med of activeMeds){
-        const color = med.color || defaultColor(activeMeds.indexOf(med));
-        let scheduled = 0, taken = 0;
-        for(const dk of dates){
-          const dayLogs = state.logs.filter(l => l.medId === med.id && l.scheduledDate === dk);
-          scheduled += dayLogs.length;
-          taken += dayLogs.filter(l => l.status === "taken").length;
-        }
-        const pct = scheduled > 0 ? Math.round((taken / scheduled) * 100) : 0;
-        adhHtml += `
-          <div class="adherence-row">
-            <div class="adherence-row-top">
-              <div class="adherence-label">
-                <span class="cal-med-dot" style="background:${color}"></span>
-                ${escapeHtml(med.name)}
-              </div>
-              <div class="adherence-pct">${pct}%</div>
-            </div>
-            <div class="adherence-bar-bg">
-              <div class="adherence-bar-fill" style="width:${pct}%;background:${color}"></div>
-            </div>
-          </div>`;
+      // Line chart: evolution of confirmed doses per day
+      adhEl.innerHTML = renderLineChart(activeMeds, dates, days);
+    }
+
+    function renderLineChart(activeMeds, dates, days){
+      if(!activeMeds.length) return "";
+
+      const todayKey = dateKey();
+      const medData = activeMeds.map((med, idx) => ({
+        med,
+        color: med.color || defaultColor(idx),
+        values: dates.map(dk => ({
+          taken: state.logs.filter(l => l.medId === med.id && l.scheduledDate === dk && l.status === "taken").length,
+          scheduled: state.logs.filter(l => l.medId === med.id && l.scheduledDate === dk).length
+        }))
+      }));
+
+      const W = 360, H = 160;
+      const padT = 14, padR = 12, padB = 32, padL = 26;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+      const maxVal = Math.max(1, ...medData.flatMap(d => d.values.map(v => v.taken)));
+      const n = dates.length;
+      const xPos = i => padL + (n > 1 ? (i / (n - 1)) * chartW : chartW / 2);
+      const yPos = v => padT + chartH - (v / maxVal) * chartH;
+      const dayNames = ["D","L","M","X","J","V","S"];
+      const labelStep = days <= 7 ? 1 : 7;
+
+      let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible">`;
+
+      // Horizontal grid lines
+      for(let v = 0; v <= maxVal; v++){
+        const yp = yPos(v).toFixed(1);
+        svg += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="#E8EDEA" stroke-width="1"/>`;
+        svg += `<text x="${padL-4}" y="${(yPos(v)+3.5).toFixed(1)}" font-size="9" fill="#9AAAA5" text-anchor="end">${v}</text>`;
       }
-      adhHtml += `</div>`;
-      adhEl.innerHTML = adhHtml;
+
+      // X-axis labels
+      dates.forEach((dk, i) => {
+        if(i % labelStep !== 0 && i !== n-1) return;
+        const [y,m,d] = dk.split("-").map(Number);
+        const dt = new Date(y, m-1, d);
+        const isToday = dk === todayKey;
+        svg += `<text x="${xPos(i).toFixed(1)}" y="${(H-padB+14).toFixed(1)}" font-size="9" fill="${isToday ? "#116A5B" : "#9AAAA5"}" font-weight="${isToday ? "700" : "400"}" text-anchor="middle">${dayNames[dt.getDay()]}${d}</text>`;
+      });
+
+      // Today vertical marker
+      const todayIdx = dates.indexOf(todayKey);
+      if(todayIdx >= 0){
+        const xp = xPos(todayIdx).toFixed(1);
+        svg += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+chartH}" stroke="#116A5B" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>`;
+      }
+
+      // Area + line + dots per med
+      for(const {color, values} of medData){
+        const pts = values.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v.taken).toFixed(1)}`).join(" ");
+        const areaPath = `${padL.toFixed(1)},${(padT+chartH).toFixed(1)} ${pts} ${(padL+chartW).toFixed(1)},${(padT+chartH).toFixed(1)}`;
+        svg += `<polygon points="${areaPath}" fill="${color}" opacity="0.08"/>`;
+        svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+        values.forEach((v, i) => {
+          if(v.scheduled > 0){
+            svg += `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(v.taken).toFixed(1)}" r="3" fill="${color}" stroke="white" stroke-width="1.5"/>`;
+          }
+        });
+      }
+
+      svg += `</svg>`;
+
+      // Legend
+      const legend = medData.map(({med, color}) =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;color:var(--text)">
+          <span style="display:inline-block;width:18px;height:2.5px;background:${color};border-radius:2px"></span>
+          ${escapeHtml(med.name)}
+        </span>`
+      ).join("");
+
+      return `
+        <div style="margin-top:18px">
+          <div class="adherence-title">Evolución de tomas confirmadas (últimos ${days} días)</div>
+          <div style="margin-top:8px;padding:4px 0">${svg}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${legend}</div>
+        </div>`;
     }
 
     function setHistoryView(view){
@@ -1841,6 +1908,7 @@
 
     function closeModal(){
       currentModal = null;
+      try { window.AndroidRingtone?.stopSound(); } catch(e){}
       document.getElementById("modalBackdrop").classList.remove("show");
       document.getElementById("modal").innerHTML = '<div class="modal-handle"></div>';
     }
@@ -2093,7 +2161,7 @@
         <div class="modal-head">
           <div>
             <h3>Eliminar medicamento</h3>
-            <p class="muted">¿Eliminar <strong>${escapeHtml(med.name)}</strong>? El historial registrado se conservará.</p>
+            <p class="muted">¿Eliminar <strong>${escapeHtml(med.name)}</strong>? Se borrarán el medicamento y todo su historial de tomas.</p>
           </div>
           <button class="xbtn" onclick="closeModal()">×</button>
         </div>
@@ -2106,10 +2174,11 @@
 
     function confirmDeleteMed(medId){
       state.meds = state.meds.filter(m => m.id !== medId);
+      state.logs = state.logs.filter(l => l.medId !== medId);
       save();
       closeModal();
       render();
-      toast("Medicamento eliminado. El historial anterior se mantiene.");
+      toast("Medicamento y su historial eliminados.");
     }
 
     function addBox(medId){
@@ -2219,6 +2288,22 @@
         toast("Prueba lanzada. Si no suena, toca la pantalla y revisa permisos.");
       });
 
+      document.getElementById("btnPreviewSound")?.addEventListener("click", () => {
+        const uri = document.getElementById("alarmSoundSelect")?.value || "beep";
+        if(uri === "beep"){
+          beep(3);
+        } else if(window.AndroidRingtone){
+          try{ window.AndroidRingtone.playSound(uri); }catch(e){}
+          setTimeout(() => { try{ window.AndroidRingtone.stopSound(); }catch(e){} }, 3000);
+        }
+      });
+
+      document.getElementById("alarmSoundSelect")?.addEventListener("change", (ev) => {
+        if(!state.settings) state.settings = {};
+        state.settings.alarmSoundUri = ev.target.value;
+        save();
+      });
+
       document.getElementById("btnRefresh").addEventListener("click", () => {
         ensureDosesForDate();
         closeOldOpenDoses();
@@ -2292,6 +2377,23 @@
       toast("Datos reiniciados.");
     }
 
+    function loadAlarmSounds(){
+      const field = document.getElementById("alarmSoundField");
+      const select = document.getElementById("alarmSoundSelect");
+      if(!field || !select || !window.AndroidRingtone) return;
+      try{
+        const sounds = JSON.parse(window.AndroidRingtone.getAlarmSounds());
+        select.innerHTML = sounds.map(s =>
+          `<option value="${escapeAttr(s.uri)}">${escapeHtml(s.name)}</option>`
+        ).join("");
+        const saved = state?.settings?.alarmSoundUri;
+        if(saved) select.value = saved;
+        field.style.display = "";
+      }catch(e){
+        console.warn("Could not load alarm sounds", e);
+      }
+    }
+
     async function registerServiceWorker(){
       if("serviceWorker" in navigator){
         try{
@@ -2307,6 +2409,7 @@
     closeOldOpenDoses();
     setupEvents();
     registerServiceWorker();
+    loadAlarmSounds();
     render();
     runScheduler();
     setInterval(runScheduler, CHECK_INTERVAL_MS);
