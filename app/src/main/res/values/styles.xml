@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.MedControl" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#F4F7F5</item>
+        <item name="android:statusBarColor">#116A5B</item>
+        <item name="android:navigationBarColor">#F4F7F5</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

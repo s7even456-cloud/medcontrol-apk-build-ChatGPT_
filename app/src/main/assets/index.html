@@ -1,0 +1,2435 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#116A5B" />
+  <meta name="description" content="Control diario de medicación, recordatorios, confirmaciones y stock." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <title>MedControl Diario</title>
+  <style>
+    :root {
+      --bg: #F0F4F2;
+      --card: #FFFFFF;
+      --text: #17221F;
+      --muted: #64706B;
+      --line: #DDE6E1;
+      --brand: #116A5B;
+      --brand-2: #0C4E43;
+      --brand-dark: #093D34;
+      --accent: #F0A33A;
+      --danger: #D32F2F;
+      --danger-bg: #FFEBEE;
+      --ok: #1B8A4E;
+      --ok-bg: #E8F5EE;
+      --warn: #B45309;
+      --warn-bg: #FFF3CD;
+      --info: #1565C0;
+      --info-bg: #E3F2FD;
+      --shadow-sm: 0 2px 8px rgba(14,32,27,.08);
+      --shadow: 0 4px 20px rgba(14,32,27,.10);
+      --shadow-lg: 0 12px 40px rgba(14,32,27,.15);
+      --radius: 20px;
+      --radius-sm: 14px;
+      --radius-xs: 10px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --nav-height: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100svh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .12s ease, background .15s ease, opacity .12s ease;
+    }
+    button:active { transform: scale(.96); }
+    .btn-primary { background: var(--brand); color: white; }
+    .btn-primary:hover { background: var(--brand-2); }
+    .btn-ghost { background: #EFF3F1; color: var(--text); }
+    .btn-ghost:hover { background: #E4EBE7; }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); }
+    .btn-danger:hover { background: #FFCDD2; }
+    .btn-ok { background: var(--ok-bg); color: var(--ok); }
+    .btn-ok:hover { background: #C8E6C9; }
+    .btn-warning { background: var(--warn-bg); color: var(--warn); }
+    .btn-warning:hover { background: #FFE082; }
+    .btn-small { padding: 8px 14px; font-size: .82rem; }
+    .btn-xs { padding: 6px 12px; font-size: .76rem; }
+
+    /* ===== CHIPS ===== */
+    .chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+    .chip.ok { background: var(--ok-bg); color: var(--ok); }
+    .chip.warn { background: var(--warn-bg); color: var(--warn); }
+    .chip.danger { background: var(--danger-bg); color: var(--danger); }
+    .chip.info { background: var(--info-bg); color: var(--info); }
+    .chip.neutral { background: #ECEFED; color: var(--muted); }
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 900;
+      background: var(--danger);
+      color: white;
+      margin-left: 4px;
+    }
+    .stat-badge.hidden { display: none; }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px calc(10px + var(--safe-top));
+      padding-top: calc(10px + var(--safe-top));
+      background: var(--brand);
+      box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-logo {
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-logo svg { width: 20px; height: 20px; }
+    .header-title {
+      color: white;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -.01em;
+    }
+    .clock-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.16);
+      border-radius: 999px;
+      padding: 5px 12px;
+    }
+    .clock-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #7FFFD4;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: .4; }
+    }
+    #clock { color: white; font-weight: 800; font-size: .95rem; letter-spacing: .01em; }
+
+    /* ===== STATS ROW ===== */
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      padding: 12px 14px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .stats-row::-webkit-scrollbar { display: none; }
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      flex: 0 0 auto;
+      min-width: 110px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--line);
+    }
+    .stat-label {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -.03em;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .stat-sub {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .stat-row-inner { display: flex; align-items: center; }
+    .stat-card.adherence-high .stat-value { color: var(--ok); }
+    .stat-card.adherence-mid .stat-value { color: var(--warn); }
+    .stat-card.adherence-low .stat-value { color: var(--danger); }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      padding: 14px 12px calc(var(--nav-height) + 20px + var(--safe-bottom));
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .sections-wrap {}
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 16px 2px 10px;
+      gap: 12px;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -.025em;
+      color: var(--text);
+    }
+    .section-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* ===== TODAY DOSES ===== */
+    .dose-list { display: flex; flex-direction: column; }
+    .dose-row {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid #F0F4F2;
+      border-left: 4px solid transparent;
+    }
+    .dose-row:last-child { border-bottom: none; }
+    .dose-row.status-taken { border-left-color: var(--ok); }
+    .dose-row.status-missed { border-left-color: var(--danger); }
+    .dose-row.status-alarm_ringed { border-left-color: var(--accent); }
+    .dose-row.status-awaiting_check { border-left-color: var(--info); }
+    .dose-row.status-snoozed { border-left-color: var(--warn); }
+    .time-badge {
+      background: #EEF2F0;
+      color: var(--brand);
+      border-radius: 8px;
+      padding: 6px 8px;
+      text-align: center;
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+    .med-title { font-weight: 700; font-size: .94rem; color: var(--text); }
+    .dose-meta { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+
+    /* ===== STOCK GRID ===== */
+    .stock-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .stock-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .stock-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .stock-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+    .stock-days {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .stock-days-num {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      color: var(--brand);
+      line-height: 1;
+    }
+    .stock-card.low .stock-days-num { color: var(--warn); }
+    .stock-card.empty .stock-days-num { color: var(--danger); }
+    .stock-days-label {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .stock-detail {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .progress {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: #E8EDEA;
+      overflow: hidden;
+    }
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand), #23A283);
+      width: 0%;
+      transition: width .5s ease;
+    }
+    .stock-card.low .progress span {
+      background: linear-gradient(90deg, #D97706, #F0A33A);
+    }
+    .stock-card.empty .progress span {
+      background: linear-gradient(90deg, var(--danger), #EF5350);
+    }
+    .stock-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ===== MED LIST ===== */
+    .med-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .med-item {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--brand);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+    .med-item.paused {
+      border-left-color: #B0BEB8;
+      opacity: .8;
+    }
+    .med-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .med-info {}
+    .med-times {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .time-chip {
+      background: linear-gradient(135deg, #EAF4F1, #D6EDE7);
+      color: var(--brand);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    .med-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+
+    /* ===== COLOR PICKER ===== */
+    .color-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .color-swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: border-color .15s, transform .15s;
+      outline: none;
+    }
+    .color-swatch.selected {
+      border-color: #17221F;
+      transform: scale(1.18);
+    }
+
+    /* ===== FAB ===== */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 18px + var(--safe-bottom));
+      right: 18px;
+      z-index: 25;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      font-size: 1.6rem;
+      font-weight: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 20px rgba(17,106,91,.38);
+      border: 0;
+      line-height: 1;
+    }
+    .fab.visible { display: flex; }
+    .fab:active { transform: scale(.93); }
+
+    /* ===== HISTORY TABLE ===== */
+    .history-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
+    }
+    thead {
+      background: #F0F4F2;
+    }
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 700;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    td {
+      padding: 11px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid #F0F4F2;
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #F7FAF8; }
+
+    /* ===== CALENDAR GRID ===== */
+    .history-subtoggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .subtoggle-btn {
+      padding: 7px 18px;
+      border-radius: 999px;
+      font-size: .82rem;
+      font-weight: 700;
+      background: #E8EDEA;
+      color: var(--muted);
+    }
+    .subtoggle-btn.active {
+      background: var(--brand);
+      color: white;
+    }
+    .cal-days-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .cal-outer {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+    }
+    .cal-grid {
+      display: grid;
+      min-width: max-content;
+    }
+    .cal-head-cell {
+      background: #F0F4F2;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: .65rem;
+      font-weight: 700;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid #E8EDEA;
+      white-space: nowrap;
+      min-width: 44px;
+    }
+    .cal-head-cell.today { color: var(--brand); background: #E0F0EB; }
+    .cal-head-cell.sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      min-width: 86px;
+      text-align: left;
+      padding-left: 10px;
+      border-right: 2px solid var(--line);
+    }
+    .cal-med-label {
+      background: #FAFCFB;
+      padding: 0 10px;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid #F0F4F2;
+      border-right: 2px solid var(--line);
+      min-width: 86px;
+      max-width: 86px;
+      height: 42px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: sticky;
+      left: 0;
+      z-index: 2;
+    }
+    .cal-med-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cal-cell {
+      border-bottom: 1px solid #F0F4F2;
+      border-right: 1px solid #F0F4F2;
+      min-width: 44px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .64rem;
+      font-weight: 800;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .cal-cell.taken { color: white; }
+    .cal-cell.missed { background: #FFEBEE; color: #C62828; }
+    .cal-cell.partial { background: #FFF8E1; color: #B45309; }
+    .cal-cell.pending { background: #F5F5F5; }
+    .adherence-section {
+      margin-top: 18px;
+    }
+    .adherence-title {
+      font-size: .82rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .adherence-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .adherence-row { display: flex; flex-direction: column; gap: 4px; }
+    .adherence-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .adherence-label {
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .adherence-pct {
+      font-size: .8rem;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .adherence-bar-bg {
+      height: 9px;
+      background: #E8EDEA;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .adherence-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width .6s ease;
+    }
+
+    /* ===== SETTINGS ===== */
+    .settings-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    .settings-card + .settings-card { margin-top: 12px; }
+    .settings-card h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 14px;
+      letter-spacing: -.02em;
+    }
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      color: #26332F;
+      font-weight: 700;
+      font-size: .88rem;
+    }
+    input[type="number"],
+    input[type="text"],
+    input[type="time"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      background: #FAFCFB;
+      color: var(--text);
+      outline: none;
+      font-size: .95rem;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: rgba(17,106,91,.5);
+      box-shadow: 0 0 0 3px rgba(17,106,91,.1);
+    }
+    .settings-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .settings-actions button { width: 100%; border-radius: var(--radius-sm); }
+    .danger-card {
+      background: var(--danger-bg);
+      border-color: rgba(211,47,47,.2);
+    }
+    .danger-card h3 { color: var(--danger); }
+
+    /* ===== NOTIF STATUS ===== */
+    .notif-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      background: #F5F8F6;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      margin-bottom: 14px;
+    }
+    .notif-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .notif-dot.granted { background: var(--ok); }
+    .notif-dot.denied { background: var(--danger); }
+    .notif-dot.default { background: var(--warn); }
+    .notif-status-text {
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+
+    /* ===== CHECKLINE ===== */
+    .checkline {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: #F5F8F6;
+      border: 1.5px solid var(--line);
+      margin: 14px 0;
+    }
+    .checkline input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      accent-color: var(--brand);
+      flex: 0 0 auto;
+      border-radius: 6px;
+      border: none;
+      padding: 0;
+      box-shadow: none;
+    }
+    .checkline-text {}
+    .checkline label {
+      font-weight: 700;
+      font-size: .92rem;
+      display: block;
+    }
+    .checkline .hint {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ===== SNOOZE PILLS ===== */
+    .snooze-row {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .snooze-row-label {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 9px;
+    }
+    .snooze-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .snooze-pill {
+      background: #EDF2EF;
+      color: var(--brand);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: .82rem;
+      font-weight: 700;
+      border: 1.5px solid transparent;
+    }
+    .snooze-pill:active { background: var(--brand); color: white; }
+    .snooze-custom-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 9px;
+      align-items: center;
+    }
+    .snooze-custom-row input {
+      flex: 1;
+      padding: 9px 12px;
+      font-size: .88rem;
+    }
+    .snooze-custom-row .snooze-pill {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(10,18,16,.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0 0 var(--safe-bottom);
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: min(620px, 100%);
+      max-height: 92svh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 28px 28px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.22);
+      padding: 8px 18px 28px;
+      animation: slideUp .2s cubic-bezier(.22,.68,0,1.2);
+    }
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 999px;
+      background: #DDE6E1;
+      margin: 8px auto 16px;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: .5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .modal h3 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+    .modal p.muted {
+      font-size: .88rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+    .xbtn {
+      width: 36px; height: 36px;
+      padding: 0;
+      background: #EFF3F1;
+      color: #26332F;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      font-size: 1.2rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .modal-actions button { flex: 1; min-width: 120px; border-radius: var(--radius-sm); padding: 13px 16px; }
+    .modal-note {
+      border-radius: var(--radius-sm);
+      background: #F2F7F5;
+      border: 1px solid #CFE4DC;
+      padding: 12px;
+      color: #244D44;
+      line-height: 1.45;
+      font-size: .85rem;
+      margin: 10px 0;
+    }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      position: fixed;
+      z-index: 50;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0 6px calc(6px + var(--safe-bottom));
+      display: flex;
+      align-items: stretch;
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid rgba(221,230,225,.9);
+      box-shadow: 0 -4px 20px rgba(14,32,27,.10);
+      backdrop-filter: blur(14px);
+      height: calc(var(--nav-height) + var(--safe-bottom));
+    }
+    .nav-btn {
+      background: transparent;
+      color: #7A8882;
+      border-radius: var(--radius-xs);
+      padding: 8px 4px 4px;
+      font-size: .68rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex: 1;
+      letter-spacing: .01em;
+      transition: color .15s, background .15s;
+      min-height: 56px;
+    }
+    .nav-btn svg {
+      width: 22px;
+      height: 22px;
+      transition: transform .15s;
+    }
+    .nav-btn.active { color: var(--brand); }
+    .nav-btn.active svg { transform: scale(1.12); }
+    .nav-btn-icon {
+      width: 40px;
+      height: 32px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+    .nav-btn.active .nav-btn-icon { background: #E0F0EB; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      border: 1.5px dashed #BAC7C1;
+      border-radius: var(--radius);
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--muted);
+      background: #FAFCFB;
+      font-size: .9rem;
+      font-weight: 500;
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      z-index: 120;
+      left: 50%;
+      bottom: calc(var(--nav-height) + 10px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(16px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      width: min(500px, calc(100% - 28px));
+      background: #13251F;
+      color: white;
+      border-radius: 999px;
+      padding: 12px 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.28);
+      font-weight: 700;
+      font-size: .9rem;
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== MISC ===== */
+    .muted { color: var(--muted); }
+    .small { font-size: .85rem; }
+    .tiny { font-size: .75rem; }
+    .strong { font-weight: 800; }
+    .divider { height: 1px; background: var(--line); margin: 12px 0; }
+    .hide-sm { display: none; }
+
+    @media (min-width: 480px) {
+      .hide-sm { display: table-cell; }
+    }
+    @media (min-width: 540px) {
+      .app { padding-left: 16px; padding-right: 16px; }
+      .stats-row { overflow-x: visible; }
+      .stat-card { flex: 1; }
+      .modal { border-radius: 28px; margin-bottom: 14px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="header-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M8.5 3.8h7A2.5 2.5 0 0 1 18 6.3v11.4a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 17.7V6.3a2.5 2.5 0 0 1 2.5-2.5Z" stroke="white" stroke-width="1.7"/>
+          <path d="M9 8.5h6M9 12h6M9 15.5h3.3" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="header-title">MedControl Diario</span>
+    </div>
+    <div class="clock-pill">
+      <span class="clock-dot"></span>
+      <span id="clock">--:--</span>
+    </div>
+  </header>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <article class="stat-card" aria-label="Tomas de hoy">
+      <div class="stat-label">Hoy</div>
+      <div class="stat-value" id="statToday">0/0</div>
+      <div class="stat-sub" id="statTodayText">Sin datos</div>
+    </article>
+    <article class="stat-card" id="adherenceCard" aria-label="Adherencia semanal">
+      <div class="stat-label">Adherencia 7d</div>
+      <div class="stat-value" id="statAdherence">--%</div>
+      <div class="stat-sub">Tomadas vs olvidadas</div>
+    </article>
+    <article class="stat-card" aria-label="Avisos de compra">
+      <div class="stat-label">Avisos compra</div>
+      <div class="stat-row-inner">
+        <div class="stat-value" id="statLowStock">0</div>
+        <span class="stat-badge hidden" id="statLowStockBadge">!</span>
+      </div>
+      <div class="stat-sub">Stock bajo o agotado</div>
+    </article>
+  </div>
+
+  <!-- MAIN SECTIONS -->
+  <div class="app sections-wrap">
+
+    <!-- TODAY -->
+    <section class="view-section active" id="sectionToday">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Tomas de hoy</div>
+          <div class="section-sub" id="todayLabel">--</div>
+        </div>
+        <button class="btn-ghost btn-small" id="btnRefresh" aria-label="Actualizar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Actualizar
+        </button>
+      </div>
+      <div class="card">
+        <div class="dose-list" id="todayDoses"></div>
+      </div>
+    </section>
+
+    <!-- STOCK -->
+    <section class="view-section" id="sectionStock">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Stock y compra</div>
+          <div class="section-sub">Aviso automático antes de quedarse sin</div>
+        </div>
+      </div>
+      <div class="stock-grid" id="stockList"></div>
+    </section>
+
+    <!-- MEDS -->
+    <section class="view-section" id="sectionMeds">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Medicamentos</div>
+          <div class="section-sub">Gestiona alarmas, dosis y stock</div>
+        </div>
+        <button class="btn-primary btn-small" id="btnAddMed" aria-label="Añadir medicamento">
+          + Añadir
+        </button>
+      </div>
+      <div class="med-list" id="medList"></div>
+    </section>
+
+    <!-- HISTORY (tabla + cuadrante) -->
+    <section class="view-section" id="sectionHistory">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Registro</div>
+          <div class="section-sub">Historial de tomas</div>
+        </div>
+        <button class="btn-ghost btn-small" id="btnExport" aria-label="Exportar historial">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Exportar
+        </button>
+      </div>
+
+      <div class="history-subtoggle">
+        <button class="subtoggle-btn active" id="btnViewTable" onclick="setHistoryView('table')">Tabla</button>
+        <button class="subtoggle-btn" id="btnViewGrid" onclick="setHistoryView('grid')">Cuadrante</button>
+      </div>
+
+      <!-- Table sub-view -->
+      <div id="historyTableView">
+        <div class="card history-wrap">
+          <div id="historyTable"></div>
+        </div>
+      </div>
+
+      <!-- Grid sub-view -->
+      <div id="historyGridView" hidden>
+        <div class="card" style="padding:16px 14px">
+          <div class="cal-days-toggle">
+            <button class="subtoggle-btn active" id="btn7days" onclick="setCalDays(7)">7 días</button>
+            <button class="subtoggle-btn" id="btn28days" onclick="setCalDays(28)">28 días</button>
+          </div>
+          <div class="cal-outer" id="calendarGrid"></div>
+          <div class="adherence-section" id="adherenceSection"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view-section" id="sectionSettings">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Ajustes</div>
+          <div class="section-sub">Configuración local de la app</div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Notificaciones y alarmas</h3>
+        <div class="notif-status-bar" id="notifStatusBar">
+          <span class="notif-dot default"></span>
+          <span class="notif-status-text">Comprobando permiso…</span>
+        </div>
+        <div class="field" id="alarmSoundField" style="display:none">
+          <label for="alarmSoundSelect">Sonido de alarma</label>
+          <select id="alarmSoundSelect">
+            <option value="beep">Pitido electrónico (predeterminado)</option>
+          </select>
+          <button class="btn-ghost btn-small" id="btnPreviewSound" style="margin-top:8px;border-radius:var(--radius-sm)">▶ Probar sonido seleccionado</button>
+        </div>
+        <div class="settings-actions">
+          <button class="btn-ghost" id="btnEnableNotifications">Activar notificaciones</button>
+          <button class="btn-ghost" id="btnTestAlarm">Probar alarma</button>
+          <button class="btn-ghost" id="btnInstall" hidden>Instalar en móvil</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Parámetros</h3>
+        <div class="field">
+          <label for="settingCheckDelay">Minutos hasta solicitar el check</label>
+          <input type="number" id="settingCheckDelay" min="1" max="60" step="1" value="2">
+        </div>
+        <div class="field">
+          <label for="settingLowStockDays">Días mínimos para aviso de compra</label>
+          <input type="number" id="settingLowStockDays" min="1" max="30" step="1" value="3">
+        </div>
+        <button class="btn-primary" id="btnSaveSettings" style="width:100%;border-radius:var(--radius-sm)">Guardar ajustes</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>Copia de seguridad</h3>
+        <div class="settings-actions">
+          <button class="btn-ghost" id="btnImport">Importar copia de seguridad</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+
+      <div class="settings-card danger-card">
+        <h3>Zona de peligro</h3>
+        <p class="small muted" style="margin-bottom:12px">Esta acción borrará todos los datos locales de manera irreversible.</p>
+        <button class="btn-danger" id="btnReset" style="width:100%;border-radius:var(--radius-sm)">Reiniciar todos los datos</button>
+      </div>
+    </section>
+
+  </div><!-- /.sections-wrap -->
+
+  <!-- FAB for meds section -->
+  <button class="fab" id="fabAddMed" aria-label="Añadir medicamento" onclick="openMedForm()">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button class="nav-btn active" data-target="sectionToday" aria-label="Hoy">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      Hoy
+    </button>
+    <button class="nav-btn" data-target="sectionStock" aria-label="Stock">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+      </div>
+      Stock
+    </button>
+    <button class="nav-btn" data-target="sectionMeds" aria-label="Medicamentos">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2"/><path d="M18 20v.01"/>
+        </svg>
+      </div>
+      Meds
+    </button>
+    <button class="nav-btn" data-target="sectionHistory" aria-label="Registro">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      Registro
+    </button>
+    <button class="nav-btn" data-target="sectionSettings" aria-label="Ajustes">
+      <div class="nav-btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </div>
+      Ajustes
+    </button>
+  </nav>
+
+  <!-- MODAL -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+    <div class="modal" id="modal">
+      <div class="modal-handle"></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const APP_VERSION = "1.1.0";
+    const STORAGE_KEY = "medcontrol_diario_v1";
+    const CHECK_INTERVAL_MS = 10000;
+    const COLORS = ["#116A5B","#2563EB","#7C3AED","#DC2626","#D97706","#059669","#DB2777","#0891B2"];
+
+    let state = null;
+    let currentModal = null;
+    let deferredInstallPrompt = null;
+    let audioCtx = null;
+    let historyView = "table";
+    let calDays = 7;
+
+    function defaultColor(idx){ return COLORS[idx % COLORS.length]; }
+
+    const defaultState = () => ({
+      version: APP_VERSION,
+      createdAt: new Date().toISOString(),
+      settings: {
+        checkDelayMinutes: 2,
+        lowStockDays: 3
+      },
+      meds: [
+        {
+          id: cryptoId(),
+          name: "Clopidogrel",
+          unitsPerBox: 28,
+          currentUnits: 27,
+          times: ["09:00"],
+          active: true,
+          notes: "",
+          color: COLORS[0]
+        },
+        {
+          id: cryptoId(),
+          name: "Ezetimiba",
+          unitsPerBox: 28,
+          currentUnits: 27,
+          times: ["09:00"],
+          active: true,
+          notes: "",
+          color: COLORS[1]
+        },
+        {
+          id: cryptoId(),
+          name: "Dercutane",
+          unitsPerBox: 50,
+          currentUnits: 49,
+          times: ["22:00"],
+          active: true,
+          notes: "",
+          color: COLORS[2]
+        }
+      ],
+      logs: []
+    });
+
+    function cryptoId(){
+      if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return "id_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function pad(n){ return String(n).padStart(2,"0"); }
+
+    function dateKey(date = new Date()){
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+    }
+
+    function humanDate(key){
+      const [y,m,d] = key.split("-").map(Number);
+      return new Intl.DateTimeFormat("es-ES", {weekday:"long", day:"2-digit", month:"long", year:"numeric"}).format(new Date(y, m-1, d));
+    }
+
+    function parseLocalDateTime(dayKey, time){
+      const [y,m,d] = dayKey.split("-").map(Number);
+      const [hh,mm] = time.split(":").map(Number);
+      return new Date(y, m-1, d, hh, mm, 0, 0);
+    }
+
+    function addMinutes(date, minutes){
+      return new Date(date.getTime() + minutes * 60000);
+    }
+
+    function addDays(date, days){
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function minutesFromNow(iso){
+      return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now())/60000));
+    }
+
+    function load(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        state = defaultState();
+        save();
+        return;
+      }
+      try{
+        state = JSON.parse(raw);
+        if(!state.settings) state.settings = {checkDelayMinutes:2, lowStockDays:3};
+        if(!Array.isArray(state.meds)) state.meds = [];
+        if(!Array.isArray(state.logs)) state.logs = [];
+        // Backfill color for existing meds
+        state.meds.forEach((m, i) => { if(!m.color) m.color = defaultColor(i); });
+      }catch(e){
+        console.error(e);
+        state = defaultState();
+        save();
+      }
+    }
+
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function toast(message){
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 3400);
+    }
+
+    function statusLabel(status){
+      const map = {
+        scheduled: ["Programada","neutral"],
+        snoozed: ["Pospuesta","info"],
+        alarm_ringed: ["Alarma sonada","warn"],
+        awaiting_check: ["Check pendiente","warn"],
+        taken: ["Tomada","ok"],
+        missed: ["Olvidada","danger"]
+      };
+      return map[status] || ["Sin estado","neutral"];
+    }
+
+    function chip(status){
+      const [label, cls] = statusLabel(status);
+      return `<span class="chip ${cls}">${label}</span>`;
+    }
+
+    function medById(id){
+      return state.meds.find(m => m.id === id);
+    }
+
+    function ensureDosesForDate(dayKey = dateKey()){
+      let changed = false;
+      for(const med of state.meds.filter(m => m.active)){
+        const times = [...new Set((med.times || []).filter(Boolean))].sort();
+        for(const time of times){
+          const exists = state.logs.some(l => l.medId === med.id && l.scheduledDate === dayKey && l.scheduledTime === time);
+          if(!exists){
+            state.logs.push({
+              id: `${med.id}_${dayKey}_${time}`,
+              medId: med.id,
+              medNameSnapshot: med.name,
+              scheduledDate: dayKey,
+              scheduledTime: time,
+              scheduledAt: parseLocalDateTime(dayKey, time).toISOString(),
+              status: "scheduled",
+              alarmAt: null,
+              checkDueAt: null,
+              confirmedAt: null,
+              missedAt: null,
+              snoozedUntil: null,
+              createdAt: new Date().toISOString()
+            });
+            changed = true;
+          }
+        }
+      }
+      if(changed) save();
+    }
+
+    function closeOldOpenDoses(){
+      const today = dateKey();
+      let changed = false;
+      for(const log of state.logs){
+        if(log.scheduledDate < today && !["taken","missed"].includes(log.status)){
+          log.status = "missed";
+          log.missedAt = new Date().toISOString();
+          changed = true;
+        }
+      }
+      if(changed) save();
+    }
+
+    function currentDueLogs(){
+      return state.logs
+        .filter(l => l.scheduledDate === dateKey() && !["taken","missed"].includes(l.status))
+        .sort((a,b) => a.scheduledTime.localeCompare(b.scheduledTime));
+    }
+
+    async function showNotification(title, body){
+      try{
+        if(!("Notification" in window)) return;
+        if(Notification.permission !== "granted") return;
+        if("serviceWorker" in navigator){
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification(title, {
+            body,
+            icon: "icons/icon-192.png",
+            badge: "icons/icon-192.png",
+            tag: "medcontrol",
+            renotify: true
+          });
+        }else{
+          new Notification(title, { body, icon:"icons/icon-192.png" });
+        }
+      }catch(e){
+        console.warn("Notification error", e);
+      }
+    }
+
+    function beep(times = 2){
+      const uri = state?.settings?.alarmSoundUri;
+      if(uri && uri !== "beep" && window.AndroidRingtone){
+        try{ window.AndroidRingtone.playSound(uri); }catch(e){}
+        return;
+      }
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        let start = audioCtx.currentTime;
+        for(let i=0; i<times; i++){
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.0001, start + i*.28);
+          gain.gain.exponentialRampToValueAtTime(.22, start + i*.28 + .02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + i*.28 + .18);
+          osc.connect(gain).connect(audioCtx.destination);
+          osc.start(start + i*.28);
+          osc.stop(start + i*.28 + .20);
+        }
+      }catch(e){
+        console.warn("Audio blocked until user gesture", e);
+      }
+    }
+
+    function runScheduler(){
+      ensureDosesForDate();
+      closeOldOpenDoses();
+      const now = new Date();
+
+      for(const log of currentDueLogs()){
+        const alarmTarget = log.snoozedUntil ? new Date(log.snoozedUntil) : new Date(log.scheduledAt);
+
+        if((log.status === "scheduled" || log.status === "snoozed") && now >= alarmTarget){
+          log.status = "alarm_ringed";
+          log.alarmAt = now.toISOString();
+          log.checkDueAt = addMinutes(now, Number(state.settings.checkDelayMinutes || 2)).toISOString();
+          log.snoozedUntil = null;
+          save();
+          render();
+          const med = medById(log.medId);
+          showAlarmModal(log);
+          beep(3);
+          showNotification(`Hora de tomar ${med ? med.name : log.medNameSnapshot}`, `El check de confirmación aparecerá en ${state.settings.checkDelayMinutes} min.`);
+          return;
+        }
+
+        if(log.status === "alarm_ringed" && log.checkDueAt && now >= new Date(log.checkDueAt)){
+          log.status = "awaiting_check";
+          save();
+          render();
+          showCheckModal(log);
+          beep(2);
+          showNotification("Confirma la toma", `${medById(log.medId)?.name || log.medNameSnapshot}: marca el check si ya la tomaste.`);
+          return;
+        }
+
+        if(log.status === "awaiting_check"){
+          showCheckModal(log);
+          return;
+        }
+      }
+
+      renderClock();
+    }
+
+    function renderClock(){
+      const now = new Date();
+      document.getElementById("clock").textContent = new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(now);
+    }
+
+    function render(){
+      renderClock();
+      document.getElementById("todayLabel").textContent = humanDate(dateKey());
+      document.getElementById("settingCheckDelay").value = state.settings.checkDelayMinutes;
+      document.getElementById("settingLowStockDays").value = state.settings.lowStockDays;
+
+      renderStats();
+      renderToday();
+      renderStock();
+      renderMeds();
+      renderHistory();
+      renderNotifStatus();
+      if(historyView === "grid") renderCalendar(calDays);
+    }
+
+    function todayLogs(){
+      ensureDosesForDate();
+      return state.logs
+        .filter(l => l.scheduledDate === dateKey())
+        .sort((a,b) => a.scheduledTime.localeCompare(b.scheduledTime) || a.medNameSnapshot.localeCompare(b.medNameSnapshot));
+    }
+
+    function renderStats(){
+      const logs = todayLogs();
+      const taken = logs.filter(l => l.status === "taken").length;
+      document.getElementById("statToday").textContent = `${taken}/${logs.length}`;
+      document.getElementById("statTodayText").textContent = logs.length ? `${logs.length - taken} pendientes u olvidadas` : "Sin tomas programadas";
+
+      const completed = state.logs.filter(l => ["taken","missed"].includes(l.status));
+      const takenAll = completed.filter(l => l.status === "taken").length;
+      const pct = completed.length ? Math.round((takenAll / completed.length) * 100) : null;
+      document.getElementById("statAdherence").textContent = pct === null ? "--%" : `${pct}%`;
+
+      const low = state.meds.filter(m => m.active && remainingDays(m) <= Number(state.settings.lowStockDays || 3)).length;
+      document.getElementById("statLowStock").textContent = low;
+
+      const adherenceCard = document.getElementById("adherenceCard");
+      adherenceCard.classList.remove("adherence-high","adherence-mid","adherence-low");
+      if(pct !== null){
+        if(pct > 80) adherenceCard.classList.add("adherence-high");
+        else if(pct >= 50) adherenceCard.classList.add("adherence-mid");
+        else adherenceCard.classList.add("adherence-low");
+      }
+
+      const badge = document.getElementById("statLowStockBadge");
+      if(low > 0){
+        badge.textContent = low;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+
+    function renderToday(){
+      const wrap = document.getElementById("todayDoses");
+      const logs = todayLogs();
+
+      if(!logs.length){
+        wrap.innerHTML = `<div class="empty-state">No hay tomas programadas para hoy.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = logs.map(log => {
+        const med = medById(log.medId);
+        const name = med?.name || log.medNameSnapshot;
+        const color = med?.color || defaultColor(0);
+        const nextInfo = log.status === "alarm_ringed" && log.checkDueAt
+          ? `Check disponible en ${minutesFromNow(log.checkDueAt)} min`
+          : log.status === "snoozed" && log.snoozedUntil
+            ? `Nueva alarma en ${minutesFromNow(log.snoozedUntil)} min`
+            : log.status === "taken" && log.confirmedAt
+              ? `Confirmada a las ${new Intl.DateTimeFormat("es-ES",{hour:"2-digit",minute:"2-digit"}).format(new Date(log.confirmedAt))}`
+              : log.status === "missed" ? "Registrada como no tomada" : "Pendiente";
+        return `
+          <div class="dose-row status-${log.status}" style="border-left-color:${color}">
+            <div class="time-badge">${log.scheduledTime}</div>
+            <div>
+              <div class="med-title">${escapeHtml(name)}</div>
+              <div class="dose-meta">${nextInfo}</div>
+            </div>
+            <div>${chip(log.status)}</div>
+          </div>`;
+      }).join("");
+    }
+
+    function remainingDays(med){
+      const dosesPerDay = Math.max(1, (med.times || []).length);
+      return Math.floor(Number(med.currentUnits || 0) / dosesPerDay);
+    }
+
+    function depletionText(med){
+      const days = remainingDays(med);
+      if(Number(med.currentUnits || 0) <= 0) return "Sin unidades";
+      const target = addDays(new Date(), Math.max(0, days - 1));
+      return `${days} día${days === 1 ? "" : "s"} · hasta aprox. ${new Intl.DateTimeFormat("es-ES", {day:"2-digit", month:"2-digit"}).format(target)}`;
+    }
+
+    function renderStock(){
+      const wrap = document.getElementById("stockList");
+      const meds = state.meds.filter(m => m.active);
+      if(!meds.length){
+        wrap.innerHTML = `<div class="empty-state">Añade medicamentos para controlar el stock.</div>`;
+        return;
+      }
+      wrap.innerHTML = meds.map(med => {
+        const pct = Math.max(0, Math.min(100, Math.round((Number(med.currentUnits || 0) / Number(med.unitsPerBox || 1)) * 100)));
+        const days = remainingDays(med);
+        const low = days <= Number(state.settings.lowStockDays || 3);
+        const empty = Number(med.currentUnits || 0) <= 0;
+        const alertChip = empty ? `<span class="chip danger">Agotado</span>` : low ? `<span class="chip warn">Comprar ya</span>` : `<span class="chip ok">Stock correcto</span>`;
+        return `
+          <div class="stock-card ${empty ? "empty" : low ? "low" : ""}">
+            <div class="stock-top">
+              <div class="stock-main">
+                <div class="stock-name">${escapeHtml(med.name)}</div>
+                <div class="stock-days">
+                  <span class="stock-days-num">${days}</span>
+                  <span class="stock-days-label">días</span>
+                </div>
+                <div class="stock-detail">${Number(med.currentUnits || 0)} de ${Number(med.unitsPerBox || 0)} ud · ${depletionText(med)}</div>
+              </div>
+              ${alertChip}
+            </div>
+            <div class="progress" aria-label="Stock restante"><span style="width:${pct}%"></span></div>
+            <div class="stock-actions">
+              <button class="btn-ghost btn-small" onclick="addBox('${med.id}')">Añadir caja</button>
+              <button class="btn-ghost btn-small" onclick="adjustStock('${med.id}')">Ajustar stock</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderMeds(){
+      const wrap = document.getElementById("medList");
+      if(!state.meds.length){
+        wrap.innerHTML = `<div class="empty-state">Todavía no hay medicamentos.</div>`;
+        return;
+      }
+      wrap.innerHTML = state.meds.map(med => {
+        const color = med.color || defaultColor(0);
+        return `
+          <div class="med-item${med.active ? "" : " paused"}" style="border-left-color:${med.active ? color : "#B0BEB8"}">
+            <div class="med-item-top">
+              <div class="med-info">
+                <div class="med-title" style="display:flex;align-items:center;gap:8px">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
+                  ${escapeHtml(med.name)} ${med.active ? "" : `<span class="chip neutral">Pausado</span>`}
+                </div>
+                <div class="med-times">${(med.times || []).map(t => `<span class="time-chip">${t}</span>`).join("")}</div>
+                <div class="dose-meta" style="margin-top:5px">Caja ${med.unitsPerBox} ud · quedan ${med.currentUnits} ud</div>
+              </div>
+              <div class="med-actions">
+                <button class="btn-ghost btn-xs" onclick="openMedForm('${med.id}')">Editar</button>
+                <button class="btn-danger btn-xs" onclick="deleteMed('${med.id}')">Eliminar</button>
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderHistory(){
+      const wrap = document.getElementById("historyTable");
+      const rows = [...state.logs]
+        .sort((a,b) => (b.scheduledDate + b.scheduledTime).localeCompare(a.scheduledDate + a.scheduledTime))
+        .slice(0, 80);
+
+      if(!rows.length){
+        wrap.innerHTML = `<div class="empty-state">El registro aparecerá aquí cuando se generen tomas.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Medicamento</th>
+              <th>Estado</th>
+              <th class="hide-sm">Confirmación</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(l => {
+              const med = medById(l.medId);
+              const color = med?.color || defaultColor(0);
+              return `
+                <tr>
+                  <td>${formatShortDate(l.scheduledDate)}</td>
+                  <td>${l.scheduledTime}</td>
+                  <td style="display:flex;align-items:center;gap:7px;padding:11px 12px">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>
+                    ${escapeHtml(med?.name || l.medNameSnapshot)}
+                  </td>
+                  <td>${chip(l.status)}</td>
+                  <td class="hide-sm">${l.confirmedAt ? formatTime(l.confirmedAt) : l.missedAt ? "No tomada" : "—"}</td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderCalendar(days){
+      const gridEl = document.getElementById("calendarGrid");
+      const adhEl = document.getElementById("adherenceSection");
+      const activeMeds = state.meds.filter(m => m.active);
+
+      if(!activeMeds.length){
+        gridEl.innerHTML = `<div class="empty-state" style="border:none">No hay medicamentos activos.</div>`;
+        adhEl.innerHTML = "";
+        return;
+      }
+
+      const today = new Date();
+      const todayKey = dateKey(today);
+      const dates = [];
+      for(let i = days - 1; i >= 0; i--){
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        dates.push(dateKey(d));
+      }
+
+      const dayNames = ["Do","Lu","Ma","Mi","Ju","Vi","Sa"];
+      const colTemplate = `86px repeat(${dates.length}, 44px)`;
+
+      let html = `<div class="cal-grid" style="grid-template-columns:${colTemplate}">`;
+
+      // Header row
+      html += `<div class="cal-head-cell sticky-col">Med</div>`;
+      for(const dk of dates){
+        const [y,m,d] = dk.split("-").map(Number);
+        const dt = new Date(y, m-1, d);
+        const isToday = dk === todayKey;
+        html += `<div class="cal-head-cell${isToday ? " today" : ""}">${dayNames[dt.getDay()]}<br>${d}</div>`;
+      }
+
+      // Med rows
+      for(const med of activeMeds){
+        const color = med.color || defaultColor(activeMeds.indexOf(med));
+        html += `<div class="cal-med-label"><span class="cal-med-dot" style="background:${color}"></span>${escapeHtml(med.name)}</div>`;
+
+        for(const dk of dates){
+          const dayLogs = state.logs.filter(l => l.medId === med.id && l.scheduledDate === dk);
+          if(!dayLogs.length){
+            html += `<div class="cal-cell"></div>`;
+            continue;
+          }
+          const takenLogs = dayLogs.filter(l => l.status === "taken");
+          const missedLogs = dayLogs.filter(l => l.status === "missed");
+          const total = dayLogs.length;
+          if(takenLogs.length === total){
+            const t = takenLogs[0];
+            const timeStr = t.confirmedAt ? formatTime(t.confirmedAt) : t.scheduledTime;
+            const display = total > 1 ? `${total}✓` : timeStr;
+            html += `<div class="cal-cell taken" style="background:${color}">${display}</div>`;
+          } else if(takenLogs.length > 0){
+            html += `<div class="cal-cell partial">${takenLogs.length}/${total}</div>`;
+          } else if(missedLogs.length > 0){
+            html += `<div class="cal-cell missed">✗</div>`;
+          } else {
+            html += `<div class="cal-cell pending"></div>`;
+          }
+        }
+      }
+
+      html += `</div>`;
+      gridEl.innerHTML = html;
+
+      // Line chart: evolution of confirmed doses per day
+      adhEl.innerHTML = renderLineChart(activeMeds, dates, days);
+    }
+
+    function renderLineChart(activeMeds, dates, days){
+      if(!activeMeds.length) return "";
+
+      const todayKey = dateKey();
+      const medData = activeMeds.map((med, idx) => ({
+        med,
+        color: med.color || defaultColor(idx),
+        values: dates.map(dk => ({
+          taken: state.logs.filter(l => l.medId === med.id && l.scheduledDate === dk && l.status === "taken").length,
+          scheduled: state.logs.filter(l => l.medId === med.id && l.scheduledDate === dk).length
+        }))
+      }));
+
+      const W = 360, H = 160;
+      const padT = 14, padR = 12, padB = 32, padL = 26;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+      const maxVal = Math.max(1, ...medData.flatMap(d => d.values.map(v => v.taken)));
+      const n = dates.length;
+      const xPos = i => padL + (n > 1 ? (i / (n - 1)) * chartW : chartW / 2);
+      const yPos = v => padT + chartH - (v / maxVal) * chartH;
+      const dayNames = ["D","L","M","X","J","V","S"];
+      const labelStep = days <= 7 ? 1 : 7;
+
+      let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible">`;
+
+      // Horizontal grid lines
+      for(let v = 0; v <= maxVal; v++){
+        const yp = yPos(v).toFixed(1);
+        svg += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="#E8EDEA" stroke-width="1"/>`;
+        svg += `<text x="${padL-4}" y="${(yPos(v)+3.5).toFixed(1)}" font-size="9" fill="#9AAAA5" text-anchor="end">${v}</text>`;
+      }
+
+      // X-axis labels
+      dates.forEach((dk, i) => {
+        if(i % labelStep !== 0 && i !== n-1) return;
+        const [y,m,d] = dk.split("-").map(Number);
+        const dt = new Date(y, m-1, d);
+        const isToday = dk === todayKey;
+        svg += `<text x="${xPos(i).toFixed(1)}" y="${(H-padB+14).toFixed(1)}" font-size="9" fill="${isToday ? "#116A5B" : "#9AAAA5"}" font-weight="${isToday ? "700" : "400"}" text-anchor="middle">${dayNames[dt.getDay()]}${d}</text>`;
+      });
+
+      // Today vertical marker
+      const todayIdx = dates.indexOf(todayKey);
+      if(todayIdx >= 0){
+        const xp = xPos(todayIdx).toFixed(1);
+        svg += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+chartH}" stroke="#116A5B" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>`;
+      }
+
+      // Area + line + dots per med
+      for(const {color, values} of medData){
+        const pts = values.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v.taken).toFixed(1)}`).join(" ");
+        const areaPath = `${padL.toFixed(1)},${(padT+chartH).toFixed(1)} ${pts} ${(padL+chartW).toFixed(1)},${(padT+chartH).toFixed(1)}`;
+        svg += `<polygon points="${areaPath}" fill="${color}" opacity="0.08"/>`;
+        svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+        values.forEach((v, i) => {
+          if(v.scheduled > 0){
+            svg += `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(v.taken).toFixed(1)}" r="3" fill="${color}" stroke="white" stroke-width="1.5"/>`;
+          }
+        });
+      }
+
+      svg += `</svg>`;
+
+      // Legend
+      const legend = medData.map(({med, color}) =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;color:var(--text)">
+          <span style="display:inline-block;width:18px;height:2.5px;background:${color};border-radius:2px"></span>
+          ${escapeHtml(med.name)}
+        </span>`
+      ).join("");
+
+      return `
+        <div style="margin-top:18px">
+          <div class="adherence-title">Evolución de tomas confirmadas (últimos ${days} días)</div>
+          <div style="margin-top:8px;padding:4px 0">${svg}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${legend}</div>
+        </div>`;
+    }
+
+    function setHistoryView(view){
+      historyView = view;
+      document.getElementById("btnViewTable").classList.toggle("active", view === "table");
+      document.getElementById("btnViewGrid").classList.toggle("active", view === "grid");
+      document.getElementById("historyTableView").hidden = view !== "table";
+      document.getElementById("historyGridView").hidden = view !== "grid";
+      if(view === "grid") renderCalendar(calDays);
+    }
+
+    function setCalDays(days){
+      calDays = days;
+      document.getElementById("btn7days").classList.toggle("active", days === 7);
+      document.getElementById("btn28days").classList.toggle("active", days === 28);
+      renderCalendar(days);
+    }
+
+    function renderNotifStatus(){
+      const el = document.getElementById("notifStatusBar");
+      if(!el) return;
+      if(!("Notification" in window)){
+        el.innerHTML = `<span class="notif-dot denied"></span><span class="notif-status-text">Notificaciones no disponibles en este entorno</span>`;
+        return;
+      }
+      const perm = Notification.permission;
+      const dotClass = perm === "granted" ? "granted" : perm === "denied" ? "denied" : "default";
+      const label = perm === "granted"
+        ? "Notificaciones concedidas ✓"
+        : perm === "denied"
+          ? "Permiso denegado ✗ — revisa los ajustes del sistema"
+          : "Sin solicitar — pulsa «Activar notificaciones»";
+      el.innerHTML = `<span class="notif-dot ${dotClass}"></span><span class="notif-status-text">${label}</span>`;
+    }
+
+    function formatShortDate(key){
+      const [y,m,d] = key.split("-").map(Number);
+      return new Intl.DateTimeFormat("es-ES", {day:"2-digit", month:"2-digit", year:"2-digit"}).format(new Date(y,m-1,d));
+    }
+
+    function formatTime(iso){
+      return new Intl.DateTimeFormat("es-ES", {hour:"2-digit", minute:"2-digit"}).format(new Date(iso));
+    }
+
+    function openModal(html, type = "generic"){
+      currentModal = type;
+      document.getElementById("modal").innerHTML = '<div class="modal-handle"></div>' + html;
+      document.getElementById("modalBackdrop").classList.add("show");
+    }
+
+    function closeModal(){
+      currentModal = null;
+      try { window.AndroidRingtone?.stopSound(); } catch(e){}
+      document.getElementById("modalBackdrop").classList.remove("show");
+      document.getElementById("modal").innerHTML = '<div class="modal-handle"></div>';
+    }
+
+    function snoozePillsHtml(logId, inputId, fnName){
+      return `
+        <div class="snooze-row">
+          <div class="snooze-row-label">Posponer</div>
+          <div class="snooze-pills">
+            <button class="snooze-pill" onclick="${fnName}('${logId}',5)">5 min</button>
+            <button class="snooze-pill" onclick="${fnName}('${logId}',10)">10 min</button>
+            <button class="snooze-pill" onclick="${fnName}('${logId}',15)">15 min</button>
+            <button class="snooze-pill" onclick="${fnName}('${logId}',30)">30 min</button>
+            <button class="snooze-pill" onclick="${fnName}('${logId}',60)">1 hora</button>
+          </div>
+          <div class="snooze-custom-row">
+            <input type="number" id="${inputId}" min="1" max="720" value="10" inputmode="numeric" placeholder="min">
+            <button class="snooze-pill" onclick="${fnName}('${logId}',null)">Posponer</button>
+          </div>
+        </div>`;
+    }
+
+    function showAlarmModal(log){
+      if(currentModal === "check") return;
+      const med = medById(log.medId);
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Hora de tomar ${escapeHtml(med?.name || log.medNameSnapshot)}</h3>
+            <p class="muted">Alarma de las <strong>${log.scheduledTime}</strong>. El check obligatorio aparecerá en ${state.settings.checkDelayMinutes} minutos.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-note">
+          Si no tienes el medicamento a mano, pospón la alarma. Si la pospones, el check se moverá a ${state.settings.checkDelayMinutes} min después de la nueva alarma.
+        </div>
+        ${snoozePillsHtml(log.id, "alarmSnoozeMin", "snoozeDose")}
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="closeModal()">Entendido</button>
+        </div>
+      `, "alarm");
+    }
+
+    function showCheckModal(log){
+      const med = medById(log.medId);
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Confirma la toma</h3>
+            <p class="muted">${escapeHtml(med?.name || log.medNameSnapshot)} · programada a las <strong>${log.scheduledTime}</strong>.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+        <div class="checkline">
+          <input type="checkbox" id="takenCheck">
+          <div class="checkline-text">
+            <label for="takenCheck">Confirmo que ya he tomado este medicamento.</label>
+            <div class="hint">Al confirmar, se descuenta 1 unidad del stock y se guarda el registro con fecha y hora.</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-ok" onclick="confirmTaken('${log.id}')">Guardar como tomada</button>
+          <button class="btn-danger" onclick="markMissed('${log.id}')">Olvidada / no tomada</button>
+        </div>
+        ${snoozePillsHtml(log.id, "checkSnoozeMin", "resnoozeFromCheck")}
+      `, "check");
+    }
+
+    function snoozeDose(logId, minutes){
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      if(minutes === null || minutes === undefined){
+        minutes = Math.max(1, Number(document.getElementById("alarmSnoozeMin")?.value || 10));
+      }
+      log.status = "snoozed";
+      log.snoozedUntil = addMinutes(new Date(), minutes).toISOString();
+      log.alarmAt = null;
+      log.checkDueAt = null;
+      save();
+      closeModal();
+      render();
+      toast(`Alarma pospuesta ${minutes} min.`);
+    }
+
+    function resnoozeFromCheck(logId, minutes){
+      if(minutes === null || minutes === undefined){
+        minutes = Math.max(1, Number(document.getElementById("checkSnoozeMin")?.value || 10));
+      }
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      log.status = "snoozed";
+      log.snoozedUntil = addMinutes(new Date(), minutes).toISOString();
+      log.alarmAt = null;
+      log.checkDueAt = null;
+      save();
+      closeModal();
+      render();
+      toast(`Recordatorio pospuesto ${minutes} min.`);
+    }
+
+    function confirmTaken(logId){
+      const checkbox = document.getElementById("takenCheck");
+      if(checkbox && !checkbox.checked){
+        toast("Marca primero el check de confirmación.");
+        return;
+      }
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      if(log.status === "taken") return;
+      log.status = "taken";
+      log.confirmedAt = new Date().toISOString();
+      const med = medById(log.medId);
+      if(med){
+        med.currentUnits = Math.max(0, Number(med.currentUnits || 0) - 1);
+      }
+      save();
+      closeModal();
+      render();
+      toast("Toma confirmada y registrada.");
+      const low = med && remainingDays(med) <= Number(state.settings.lowStockDays || 3);
+      if(low) showNotification("Aviso de compra", `${med.name}: quedan ${remainingDays(med)} días estimados de medicación.`);
+    }
+
+    function markMissed(logId){
+      const log = state.logs.find(l => l.id === logId);
+      if(!log) return;
+      log.status = "missed";
+      log.missedAt = new Date().toISOString();
+      save();
+      closeModal();
+      render();
+      toast("Toma registrada como olvidada/no tomada.");
+    }
+
+    function selectColor(color){
+      document.querySelectorAll(".color-swatch").forEach(s => {
+        s.classList.toggle("selected", s.dataset.color === color);
+      });
+      const inp = document.getElementById("medColor");
+      if(inp) inp.value = color;
+    }
+
+    function openMedForm(medId = null){
+      const med = medId ? medById(medId) : null;
+      const currentColor = med?.color || COLORS[0];
+      const swatchesHtml = COLORS.map(c =>
+        `<div class="color-swatch${c === currentColor ? " selected" : ""}" style="background:${c}" data-color="${c}" onclick="selectColor('${c}')" tabindex="0" role="button" aria-label="Color ${c}"></div>`
+      ).join("");
+
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>${med ? "Editar medicamento" : "Añadir medicamento"}</h3>
+            <p class="muted">Configura caja, stock actual y una o varias horas de toma.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+
+        <form id="medForm">
+          <div class="field">
+            <label>Nombre</label>
+            <input id="medName" required value="${escapeAttr(med?.name || "")}" placeholder="Ej. Clopidogrel">
+          </div>
+          <div class="field">
+            <label>Unidades por caja</label>
+            <input id="medUnitsPerBox" type="number" min="1" required value="${med?.unitsPerBox || 28}">
+          </div>
+          <div class="field">
+            <label>Unidades actuales disponibles</label>
+            <input id="medCurrentUnits" type="number" min="0" required value="${med?.currentUnits ?? 0}">
+          </div>
+          <div class="field">
+            <label>Horas de toma</label>
+            <input id="medTimes" required value="${escapeAttr((med?.times || ["09:00"]).join(", "))}" placeholder="09:00, 22:00">
+            <div class="tiny muted">Formato 24 h. Separa varias horas con coma.</div>
+          </div>
+          <div class="field">
+            <label>Color identificador</label>
+            <div class="color-picker" id="colorPickerRow">${swatchesHtml}</div>
+            <input type="hidden" id="medColor" value="${currentColor}">
+          </div>
+          <div class="field">
+            <label>Notas opcionales</label>
+            <textarea id="medNotes" rows="2" placeholder="Indicaciones, observaciones, etc.">${escapeHtml(med?.notes || "")}</textarea>
+          </div>
+          <div class="checkline">
+            <input type="checkbox" id="medActive" ${med?.active === false ? "" : "checked"}>
+            <div class="checkline-text">
+              <label for="medActive">Medicamento activo</label>
+              <div class="hint">Si lo pausas, no se crearán nuevas tomas diarias.</div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-primary" type="submit">Guardar</button>
+            <button class="btn-ghost" type="button" onclick="closeModal()">Cancelar</button>
+          </div>
+        </form>
+      `, "medform");
+
+      document.getElementById("medForm").addEventListener("submit", (ev) => {
+        ev.preventDefault();
+        const times = normalizeTimes(document.getElementById("medTimes").value);
+        if(!times.length){
+          toast("Introduce al menos una hora válida en formato HH:MM.");
+          return;
+        }
+        const payload = {
+          name: document.getElementById("medName").value.trim(),
+          unitsPerBox: Math.max(1, Number(document.getElementById("medUnitsPerBox").value)),
+          currentUnits: Math.max(0, Number(document.getElementById("medCurrentUnits").value)),
+          times,
+          active: document.getElementById("medActive").checked,
+          notes: document.getElementById("medNotes").value.trim(),
+          color: document.getElementById("medColor").value || COLORS[0]
+        };
+
+        if(med){
+          Object.assign(med, payload);
+        }else{
+          state.meds.push({ id: cryptoId(), ...payload });
+        }
+        save();
+        ensureDosesForDate();
+        closeModal();
+        render();
+        toast("Medicamento guardado.");
+      });
+    }
+
+    function normalizeTimes(value){
+      return [...new Set(value
+        .split(",")
+        .map(v => v.trim())
+        .filter(Boolean)
+        .map(v => {
+          const m = v.match(/^(\d{1,2}):(\d{2})$/);
+          if(!m) return null;
+          const h = Number(m[1]), min = Number(m[2]);
+          if(h < 0 || h > 23 || min < 0 || min > 59) return null;
+          return `${pad(h)}:${pad(min)}`;
+        })
+        .filter(Boolean))]
+        .sort();
+    }
+
+    function deleteMed(medId){
+      const med = medById(medId);
+      if(!med) return;
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Eliminar medicamento</h3>
+            <p class="muted">¿Eliminar <strong>${escapeHtml(med.name)}</strong>? Se borrarán el medicamento y todo su historial de tomas.</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-danger" onclick="confirmDeleteMed('${medId}')">Sí, eliminar</button>
+          <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+        </div>
+      `, "confirm-delete");
+    }
+
+    function confirmDeleteMed(medId){
+      state.meds = state.meds.filter(m => m.id !== medId);
+      state.logs = state.logs.filter(l => l.medId !== medId);
+      save();
+      closeModal();
+      render();
+      toast("Medicamento y su historial eliminados.");
+    }
+
+    function addBox(medId){
+      const med = medById(medId);
+      if(!med) return;
+      med.currentUnits = Number(med.currentUnits || 0) + Number(med.unitsPerBox || 0);
+      save();
+      render();
+      toast(`Añadida 1 caja de ${med.name}.`);
+    }
+
+    function adjustStock(medId){
+      const med = medById(medId);
+      if(!med) return;
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Ajustar stock</h3>
+            <p class="muted">${escapeHtml(med.name)} · stock actual: <strong>${med.currentUnits}</strong> ud</p>
+          </div>
+          <button class="xbtn" onclick="closeModal()">×</button>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label for="newStockVal">Nuevas unidades disponibles</label>
+          <input type="number" id="newStockVal" min="0" value="${med.currentUnits || 0}" inputmode="numeric">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="confirmAdjustStock('${medId}')">Guardar</button>
+          <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+        </div>
+      `, "adjust-stock");
+    }
+
+    function confirmAdjustStock(medId){
+      const med = medById(medId);
+      if(!med) return;
+      const n = Number(document.getElementById("newStockVal")?.value || 0);
+      if(Number.isNaN(n) || n < 0){ toast("Valor no válido."); return; }
+      med.currentUnits = Math.floor(n);
+      save();
+      closeModal();
+      render();
+      toast("Stock actualizado.");
+    }
+
+    function exportData(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `medcontrol-copia-${dateKey()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(file){
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const data = JSON.parse(reader.result);
+          if(!data || !Array.isArray(data.meds) || !Array.isArray(data.logs)) throw new Error("Formato inválido");
+          state = data;
+          state.meds.forEach((m, i) => { if(!m.color) m.color = defaultColor(i); });
+          save();
+          ensureDosesForDate();
+          render();
+          toast("Copia importada correctamente.");
+        }catch(e){
+          toast("No se pudo importar: archivo JSON no válido.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "").replace(/[&<>"']/g, s => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+      }[s]));
+    }
+    function escapeAttr(str){ return escapeHtml(str).replace(/`/g,"&#096;"); }
+
+    function setupEvents(){
+      document.getElementById("btnEnableNotifications").addEventListener("click", async () => {
+        if(!("Notification" in window)){
+          toast("Este navegador no soporta notificaciones.");
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        renderNotifStatus();
+        toast(perm === "granted" ? "Notificaciones activadas." : "Permiso de notificaciones no concedido.");
+      });
+
+      document.getElementById("btnInstall").addEventListener("click", async () => {
+        if(!deferredInstallPrompt){
+          toast("La instalación aparecerá cuando abras la app desde HTTPS/Chrome compatible.");
+          return;
+        }
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        document.getElementById("btnInstall").hidden = true;
+      });
+
+      document.getElementById("btnTestAlarm").addEventListener("click", () => {
+        beep(3);
+        showNotification("Prueba de alarma", "Las notificaciones funcionan si diste permiso.");
+        toast("Prueba lanzada. Si no suena, toca la pantalla y revisa permisos.");
+      });
+
+      document.getElementById("btnPreviewSound")?.addEventListener("click", () => {
+        const uri = document.getElementById("alarmSoundSelect")?.value || "beep";
+        if(uri === "beep"){
+          beep(3);
+        } else if(window.AndroidRingtone){
+          try{ window.AndroidRingtone.playSound(uri); }catch(e){}
+          setTimeout(() => { try{ window.AndroidRingtone.stopSound(); }catch(e){} }, 3000);
+        }
+      });
+
+      document.getElementById("alarmSoundSelect")?.addEventListener("change", (ev) => {
+        if(!state.settings) state.settings = {};
+        state.settings.alarmSoundUri = ev.target.value;
+        save();
+      });
+
+      document.getElementById("btnRefresh").addEventListener("click", () => {
+        ensureDosesForDate();
+        closeOldOpenDoses();
+        render();
+        toast("Datos actualizados.");
+      });
+
+      document.getElementById("btnAddMed").addEventListener("click", () => openMedForm());
+      document.getElementById("btnExport").addEventListener("click", exportData);
+      document.getElementById("btnImport").addEventListener("click", () => document.getElementById("importFile").click());
+      document.getElementById("importFile").addEventListener("change", (ev) => {
+        if(ev.target.files?.[0]) importData(ev.target.files[0]);
+        ev.target.value = "";
+      });
+
+      document.getElementById("btnSaveSettings").addEventListener("click", () => {
+        state.settings.checkDelayMinutes = Math.max(1, Number(document.getElementById("settingCheckDelay").value || 2));
+        state.settings.lowStockDays = Math.max(1, Number(document.getElementById("settingLowStockDays").value || 3));
+        save();
+        render();
+        toast("Ajustes guardados.");
+      });
+
+      document.getElementById("btnReset").addEventListener("click", () => {
+        openModal(`
+          <div class="modal-head">
+            <div>
+              <h3>Reiniciar datos</h3>
+              <p class="muted">Esto borrará todos los medicamentos, historial y stock. La acción no se puede deshacer.</p>
+            </div>
+            <button class="xbtn" onclick="closeModal()">×</button>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-danger" onclick="confirmReset()">Sí, borrar todo</button>
+            <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+          </div>
+        `, "confirm-reset");
+      });
+
+      document.getElementById("modalBackdrop").addEventListener("click", (ev) => {
+        if(ev.target.id === "modalBackdrop") closeModal();
+      });
+
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const target = btn.dataset.target;
+          document.querySelectorAll(".view-section").forEach(s => {
+            s.classList.toggle("active", s.id === target);
+          });
+          const fab = document.getElementById("fabAddMed");
+          fab.classList.toggle("visible", target === "sectionMeds");
+          if(target === "sectionHistory" && historyView === "grid") renderCalendar(calDays);
+        });
+      });
+
+      window.addEventListener("beforeinstallprompt", (ev) => {
+        ev.preventDefault();
+        deferredInstallPrompt = ev;
+        document.getElementById("btnInstall").hidden = false;
+      });
+    }
+
+    function confirmReset(){
+      localStorage.removeItem(STORAGE_KEY);
+      load();
+      ensureDosesForDate();
+      closeModal();
+      render();
+      toast("Datos reiniciados.");
+    }
+
+    function loadAlarmSounds(){
+      const field = document.getElementById("alarmSoundField");
+      const select = document.getElementById("alarmSoundSelect");
+      if(!field || !select || !window.AndroidRingtone) return;
+      try{
+        const sounds = JSON.parse(window.AndroidRingtone.getAlarmSounds());
+        select.innerHTML = sounds.map(s =>
+          `<option value="${escapeAttr(s.uri)}">${escapeHtml(s.name)}</option>`
+        ).join("");
+        const saved = state?.settings?.alarmSoundUri;
+        if(saved) select.value = saved;
+        field.style.display = "";
+      }catch(e){
+        console.warn("Could not load alarm sounds", e);
+      }
+    }
+
+    async function registerServiceWorker(){
+      if("serviceWorker" in navigator){
+        try{
+          await navigator.serviceWorker.register("service-worker.js");
+        }catch(e){
+          console.warn("No se pudo registrar el service worker", e);
+        }
+      }
+    }
+
+    load();
+    ensureDosesForDate();
+    closeOldOpenDoses();
+    setupEvents();
+    registerServiceWorker();
+    loadAlarmSounds();
+    render();
+    runScheduler();
+    setInterval(runScheduler, CHECK_INTERVAL_MS);
+
+    // Expose functions used by inline onclick handlers
+    window.openMedForm = openMedForm;
+    window.deleteMed = deleteMed;
+    window.confirmDeleteMed = confirmDeleteMed;
+    window.addBox = addBox;
+    window.adjustStock = adjustStock;
+    window.confirmAdjustStock = confirmAdjustStock;
+    window.snoozeDose = snoozeDose;
+    window.resnoozeFromCheck = resnoozeFromCheck;
+    window.confirmTaken = confirmTaken;
+    window.markMissed = markMissed;
+    window.closeModal = closeModal;
+    window.selectColor = selectColor;
+    window.setHistoryView = setHistoryView;
+    window.setCalDays = setCalDays;
+    window.confirmReset = confirmReset;
+  </script>
+</body>
+</html>
